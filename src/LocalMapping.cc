@@ -165,10 +165,13 @@ namespace ORB_SLAM2
             if (tKF->mnId == 5000)
             {
                 cout << "half key frame reached\n";
+                cout<<"Key frames in Map"<<mpMap->KeyFramesInMap()<<endl;
 
                 prevEdgeKeyFrameSave(mpMap);
+                mpMap->clear();
                 RequestReset();
                 SetNotStop(false);
+                cout<<"Key frames in Map after reset"<<mpMap->KeyFramesInMap()<<endl;
                 return;
             }
             else
