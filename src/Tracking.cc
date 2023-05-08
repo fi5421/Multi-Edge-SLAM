@@ -33,6 +33,7 @@
 #include "PnPsolver.h"
 
 #include <iostream>
+#include <fstream>
 
 #include <mutex>
 
@@ -170,14 +171,17 @@ namespace ORB_SLAM2
         string ip, server_ip;
         string port_number, server_port;
         cout << "Enter the device IP address: ";
-        getline(cin, ip);
+        // getline(cin, ip);
+        ip="127.0.0.1";
         cout << "Enter the server IP address: ";
-        getline(cin, server_ip);
+        // getline(cin, server_ip);
+        server_ip="127.0.0.1";
         // Edge-SLAM: keyframe connection
         cout << "Enter the port number used for keyframe connection: ";
         getline(cin, port_number);
         cout << "Enter the server port number used for keyframe connection: ";
-        getline(cin, server_port);
+        // getline(cin, server_port);
+        server_port=port_number;
         keyframe_socket = new TcpSocket(ip, std::stoi(port_number), server_ip, std::stoi(server_port));
         keyframe_socket->sendConnectionRequest();
         keyframe_thread = new thread(&ORB_SLAM2::Tracking::tcp_send, &keyframe_queue, keyframe_socket, "keyframe");
@@ -920,6 +924,22 @@ namespace ORB_SLAM2
 
             // Edge-SLAM: debug
             cout << "log,Tracking::Track,end process frame " << mCurrentFrame.mnId << endl;
+            if(mCurrentFrame.mnId==1482){
+                cout<<"reset signal half\n";
+                mpLastKeyFrame->SetResetKF(true);
+                mpLastKeyFrame->mnId=5000;
+                std::ostringstream os;
+                boost::archive::text_oarchive oa(os);
+                oa << mpLastKeyFrame;
+                std::string msg;
+                msg = os.str();
+                keyframe_queue.enqueue(msg);
+            }else{
+                // ofstream f;
+                // f.open("temp.txt",std::ios_base::app);
+                // f <<mCurrentFrame.mnId<<"\n" ;
+                // f.close();
+            }
             cout<<"Number of frames in MAP:"<<mpMap->KeyFramesInMap()<<endl;
         }
     }
