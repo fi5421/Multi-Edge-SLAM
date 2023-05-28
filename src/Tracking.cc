@@ -925,7 +925,6 @@ namespace ORB_SLAM2
             // Edge-SLAM: debug
             cout << "log,Tracking::Track,end process frame " << mCurrentFrame.mnId << endl;
             if(mCurrentFrame.mnId==1482){
-                cout<<"reset signal half\n";
                 mpLastKeyFrame->SetResetKF(true);
                 mpLastKeyFrame->mnId=5000;
                 std::ostringstream os;
@@ -934,12 +933,9 @@ namespace ORB_SLAM2
                 std::string msg;
                 msg = os.str();
                 keyframe_queue.enqueue(msg);
-            }else{
-                // ofstream f;
-                // f.open("temp.txt",std::ios_base::app);
-                // f <<mCurrentFrame.mnId<<"\n" ;
-                // f.close();
             }
+            
+
             cout<<"Number of frames in MAP:"<<mpMap->KeyFramesInMap()<<endl;
         }
     }
