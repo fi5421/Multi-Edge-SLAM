@@ -69,7 +69,9 @@ namespace details
 			Semaphore& operator=(const Semaphore& other) MOODYCAMEL_DELETE_FUNCTION;
 
 		public:
-			Semaphore(int initialCount = 0)
+		Host 203.135.63.29
+  HostName 203.135.63.29
+  User edgeslam(int initialCount = 0)
 			{
 				assert(initialCount >= 0);
 				const long maxLong = 0x7fffffff;

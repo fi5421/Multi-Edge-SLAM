@@ -106,7 +106,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, std::str
         if(bUseViewer)
         {
             mpViewer = new Viewer(this, mpFrameDrawer,mpMapDrawer,mpTracker,strSettingsFile);
-            // mptViewer = new thread(&Viewer::Run, mpViewer);
+            mptViewer = new thread(&Viewer::Run, mpViewer);
             // changed
             mpTracker->SetViewer(mpViewer);
         }
