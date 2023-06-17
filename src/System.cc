@@ -77,6 +77,11 @@ System::System(const string &strVocFile, const string &strSettingsFile, std::str
 
     //Create the Map
     mpMap = new Map();
+    if(RunType.compare("server2")==0)
+    {
+        cout<<"changing server2 to server\n";
+        RunType="server";
+    }
 
     // Edge-SLAM: client/server
     if (RunType.compare("client") == 0){
@@ -105,7 +110,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, std::str
         //Initialize the Viewer thread and launch
         if(bUseViewer)
         {
-            mpViewer = new Viewer(this, mpFrameDrawer,mpMapDrawer,mpTracker,strSettingsFile);
+            // mpViewer = new Viewer(this, mpFrameDrawer,mpMapDrawer,mpTracker,strSettingsFile);
             // mptViewer = new thread(&Viewer::Run, mpViewer);
             // changed
             mpTracker->SetViewer(mpViewer);
@@ -378,7 +383,8 @@ void System::ClientShutdown()
 }
 
 void System::ServerShutdown()
-{
+{   
+    cout<<"Server Shutdown in System.cc\n";
     mpLocalMapper->RequestFinish();
 
     mpLoopCloser->RequestFinish();

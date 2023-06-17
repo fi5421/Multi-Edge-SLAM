@@ -57,7 +57,7 @@ int main(int argc, char **argv)
     std::transform(RunType.begin(), RunType.end(), RunType.begin(), ::tolower);
     ros::init(argc, argv, RunType);
     ros::start();
-    if((argc != 4) || ((RunType.compare("client") != 0) && (RunType.compare("server") != 0)))
+    if((argc != 4) || ((RunType.compare("client") != 0) && (RunType.compare("server") != 0) && (RunType.compare("server2") != 0)))
     {
         cerr << endl << "Usage: rosrun Edge_SLAM RGBD VOC_PATH SETTINGS_PATH RUN_TYPE(client|server)" << endl;
         ros::shutdown();
@@ -66,7 +66,9 @@ int main(int argc, char **argv)
 
     // Edge-SLAM
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
+    cout<<"Ros Start slam\n";
     ORB_SLAM2::System SLAM(argv[1],argv[2],RunType,ORB_SLAM2::System::RGBD,true);
+    cout<<"after ros starting\n";
 
     // Edge-SLAM: check client or server
     if (RunType.compare("client") == 0)
@@ -89,11 +91,14 @@ int main(int argc, char **argv)
         SLAM.ClientShutdown();
     }
     else
-    {
+    {   
+        cout<<"b4 ros spin\n";
         ros::spin();
+        cout<<"after ros spin\n";
 
         // Edge-SLAM: split shutdown between client and server
         // Stop all threads
+        cout<<"Ros closing server\n";
         SLAM.ServerShutdown();
 
         // Save camera trajectory

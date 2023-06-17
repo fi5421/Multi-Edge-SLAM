@@ -167,36 +167,78 @@ namespace ORB_SLAM2
         }
 
         // Edge-SLAM: setting up connections
-        string ip, server_ip;
-        string port_number, server_port;
+        string ip, server_ip, dummy;
+        string port, server_port;
         cout << "Enter the device IP address: ";
-        getline(cin, ip);
+        // getline(cin, ip);
         cout << "Enter the server IP address: ";
-        getline(cin, server_ip);
+        // getline(cin, server_ip);
+        ip = "127.0.0.1";
+        server_ip = "127.0.0.1";
+
+        cout << "Enter Port: ";
+        getline(cin, port);
+        cout << "Select Edge 1 or 2: ";
+        // int edgeNumber;
+        cin >> edgeNumber;
+        cout<<"Edge Selected: "<<edgeNumber<<endl;
+        cin.clear();
+        cin.ignore();
+        int *edgeNumberPointer=&edgeNumber;
+        // cout<<std::format("KeyFrame Connection port Edge1 {} Edge2 {}\n",port_number,port_number+1);
+        int port_number = std::stoi(port);
+        cout << "KeyFrame Connection port Edge1 " << port_number << " Edge2 " << port_number + 1 << endl;
         // Edge-SLAM: keyframe connection
-        cout << "Enter the port number used for keyframe connection: ";
-        getline(cin, port_number);
-        cout << "Enter the server port number used for keyframe connection: ";
-        getline(cin, server_port);
-        keyframe_socket = new TcpSocket(ip, std::stoi(port_number), server_ip, std::stoi(server_port));
+        // cout << "Enter the port number used for keyframe connection: ";
+        // cout << "Enter the server port number used for keyframe connection: ";
+        // getline(cin, server_port);
+        cout << "here0" << ip << " " << port_number << " " << server_ip << " " << endl;
+        keyframe_socket = new TcpSocket(ip, port_number, server_ip, port_number);
         keyframe_socket->sendConnectionRequest();
-        keyframe_thread = new thread(&ORB_SLAM2::Tracking::tcp_send, &keyframe_queue, keyframe_socket, "keyframe");
+        port_number++;
+
+        cout << "here\n";
+        keyframe_socket2 = new TcpSocket(ip, port_number, server_ip, port_number);
+        keyframe_socket2->sendConnectionRequest();
+
+        keyframe_thread = new thread(&ORB_SLAM2::Tracking::tcp_send, &keyframe_queue, keyframe_socket, "keyframe", keyframe_socket2, edgeNumberPointer);
         // Edge-SLAM: frame connection
-        cout << "Enter the port number used for frame connection: ";
-        getline(cin, port_number);
-        cout << "Enter the server port number used for frame connection: ";
-        getline(cin, server_port);
-        frame_socket = new TcpSocket(ip, std::stoi(port_number), server_ip, std::stoi(server_port));
+
+        port_number++;
+        cout << "Keyframe thread created " << port_number << endl;
+        getline(cin, dummy);
+        // cout<<std::format("Frame Connection port Edge1 {} Edge2 {}\n",port_number,port_number+1);
+        cout << "Frame Connection port Edge1 " << port_number << " Edge2 " << port_number + 1 << endl;
+
+        // cout << "Enter the port number used for frame connection: ";
+        // getline(cin, port_number);
+        // cout << "Enter the server port number used for frame connection: ";
+        // getline(cin, server_port);
+        frame_socket = new TcpSocket(ip, port_number, server_ip, port_number);
         frame_socket->sendConnectionRequest();
-        frame_thread = new thread(&ORB_SLAM2::Tracking::tcp_send, &frame_queue, frame_socket, "frame");
+        port_number++;
+        frame_socket2 = new TcpSocket(ip, port_number, server_ip, port_number);
+        frame_socket2->sendConnectionRequest();
+        frame_thread = new thread(&ORB_SLAM2::Tracking::tcp_send, &frame_queue, frame_socket, "frame", frame_socket2, edgeNumberPointer);
         // Edge-SLAM: map connection
-        cout << "Enter the port number used for map connection: ";
-        getline(cin, port_number);
-        cout << "Enter the server port number used for map connection: ";
-        getline(cin, server_port);
-        map_socket = new TcpSocket(ip, std::stoi(port_number), server_ip, std::stoi(server_port));
+
+        port_number++;
+        cout << "Frame thread created " << port_number << endl;
+        getline(cin, dummy);
+        // cout<<std::format("Map Connection port Edge1 {} Edge2 {}\n",port_number,port_number+1);
+        cout << "Map Connection port Edge1 " << port_number << " Edge2 " << port_number + 1 << endl;
+
+        // cout << "Enter the port number used for map connection: ";
+        // getline(cin, port_number);
+        // cout << "Enter the server port number used for map connection: ";
+        // getline(cin, server_port);
+        map_socket = new TcpSocket(ip, port_number, server_ip, port_number);
         map_socket->sendConnectionRequest();
-        map_thread = new thread(&ORB_SLAM2::Tracking::tcp_receive, &map_queue, map_socket, 1, "map");
+        port_number += 1;
+        map_socket2 = new TcpSocket(ip, port_number, server_ip, port_number);
+        map_socket2->sendConnectionRequest();
+
+        map_thread = new thread(&ORB_SLAM2::Tracking::tcp_receive, &map_queue, map_socket, 1, "map", map_socket2, edgeNumberPointer);
 
         // Edge-SLAM: debug
         cout << "log,Tracking::Tracking,done" << endl;
@@ -920,7 +962,11 @@ namespace ORB_SLAM2
 
             // Edge-SLAM: debug
             cout << "log,Tracking::Track,end process frame " << mCurrentFrame.mnId << endl;
-            cout<<"Number of frames in MAP:"<<mpMap->KeyFramesInMap()<<endl;
+            if(mCurrentFrame.mnId>1480 && edgeNumber!=2){
+                cout<<"-------------SWITCHING EDGES----------\n";
+                edgeNumber=2;
+            }
+            cout << "Number of frames in MAP:" << mpMap->KeyFramesInMap() << endl;
         }
     }
 
@@ -2156,9 +2202,11 @@ namespace ORB_SLAM2
         mlFrameTimes.clear();
         mlbLost.clear();
 
-        if(mpViewer)
-            {   cout<<"mpViewer called here reset"<<endl;
-                mpViewer->Release();}
+        if (mpViewer)
+        {
+            cout << "mpViewer called here reset" << endl;
+            mpViewer->Release();
+        }
         // changed
 
         // Edge-SLAM
@@ -2248,7 +2296,7 @@ namespace ORB_SLAM2
     }
 
     // Edge-SLAM: send function to be called on a separate thread
-    void Tracking::tcp_send(moodycamel::BlockingConcurrentQueue<std::string> *messageQueue, TcpSocket *socketObject, std::string name)
+    void Tracking::tcp_send(moodycamel::BlockingConcurrentQueue<std::string> *messageQueue, TcpSocket *socketObject, std::string name, TcpSocket *nextEdgeSocket, int *edgeNumber)
     {
         std::string msg;
         bool success = true;
@@ -2256,67 +2304,132 @@ namespace ORB_SLAM2
         // This is not a busy wait because wait_dequeue function is blocking
         do
         {
-            if (!socketObject->checkAlive())
+            if (*edgeNumber == 1)
             {
-                // Edge-SLAM: debug
-                cout << "log,Tracking::tcp_send,terminating thread" << endl;
-
-                break;
-            }
-
-            if (success)
-                messageQueue->wait_dequeue(msg);
-
-            if ((!msg.empty()) && (msg.compare("exit") != 0))
-            {
-                if (socketObject->sendMessage(msg) == 1)
+                if (!socketObject->checkAlive())
                 {
-                    success = true;
-                    msg.clear();
-
                     // Edge-SLAM: debug
-                    cout << "log,Tracking::tcp_send,sent " << name << endl;
+                    cout << "log,Tracking::tcp_send,terminating thread" << endl;
+
+                    break;
                 }
-                else
+
+                if (success)
+                    messageQueue->wait_dequeue(msg);
+
+                if ((!msg.empty()) && (msg.compare("exit") != 0))
                 {
-                    success = false;
+                    if (socketObject->sendMessage(msg) == 1)
+                    {
+                        success = true;
+                        msg.clear();
+
+                        // Edge-SLAM: debug
+                        cout << "log,Tracking::tcp_send,sent " << name << endl;
+                    }
+                    else
+                    {
+                        success = false;
+                    }
+                }
+            }
+            else
+            {
+                if (!nextEdgeSocket->checkAlive())
+                {
+                    // Edge-SLAM: debug
+                    cout << "log,Tracking::tcp_send,terminating thread" << endl;
+
+                    break;
+                }
+
+                if (success)
+                    messageQueue->wait_dequeue(msg);
+
+                if ((!msg.empty()) && (msg.compare("exit") != 0))
+                {
+                    if (nextEdgeSocket->sendMessage(msg) == 1)
+                    {
+                        success = true;
+                        msg.clear();
+
+                        // Edge-SLAM: debug
+                        cout << "log,Tracking::tcp_send,sent " << name << endl;
+                    }
+                    else
+                    {
+                        success = false;
+                    }
                 }
             }
         } while (1);
     }
 
     // Edge-SLAM: receive function to be called on a separate thread
-    void Tracking::tcp_receive(moodycamel::ConcurrentQueue<std::string> *messageQueue, TcpSocket *socketObject, unsigned int maxQueueSize, std::string name)
+    void Tracking::tcp_receive(moodycamel::ConcurrentQueue<std::string> *messageQueue, TcpSocket *socketObject, unsigned int maxQueueSize, std::string name, TcpSocket *nextEdgeSocket, int *edgeNumber)
     {
         // Here the while(1) won't cause busy waiting as the implementation of receive function is blocking.
         while (1)
         {
-            if (!socketObject->checkAlive())
+            if (*edgeNumber == 1)
             {
-                // Edge-SLAM: debug
-                cout << "log,Tracking::tcp_receive,terminating thread" << endl;
-
-                break;
-            }
-            std::string msg = socketObject->recieveMessage();
-
-            if (!msg.empty())
-            {
-                if (messageQueue->size_approx() >= maxQueueSize)
+                if (!socketObject->checkAlive())
                 {
-                    string data;
-                    if (messageQueue->try_dequeue(data))
-                    {
-                        data.clear();
+                    // Edge-SLAM: debug
+                    cout << "log,Tracking::tcp_receive,terminating thread" << endl;
 
-                        // Edge-SLAM: debug
-                        cout << "log,Tracking::tcp_receive,dropped " << name << endl;
-                    }
+                    break;
                 }
-                messageQueue->enqueue(msg);
+                std::string msg = socketObject->recieveMessage();
 
-                // Edge-SLAM: debug
-                cout << "log,Tracking::tcp_receive,received " << name << endl;
+                if (!msg.empty())
+                {
+                    if (messageQueue->size_approx() >= maxQueueSize)
+                    {
+                        string data;
+                        if (messageQueue->try_dequeue(data))
+                        {
+                            data.clear();
+
+                            // Edge-SLAM: debug
+                            cout << "log,Tracking::tcp_receive,dropped " << name << endl;
+                        }
+                    }
+                    messageQueue->enqueue(msg);
+
+                    // Edge-SLAM: debug
+                    cout << "log,Tracking::tcp_receive,received " << name << endl;
+                }
+            }
+            else
+            {
+                if (!nextEdgeSocket->checkAlive())
+                {
+                    // Edge-SLAM: debug
+                    cout << "log,Tracking::tcp_receive,terminating thread" << endl;
+
+                    break;
+                }
+                std::string msg = nextEdgeSocket->recieveMessage();
+
+                if (!msg.empty())
+                {
+                    if (messageQueue->size_approx() >= maxQueueSize)
+                    {
+                        string data;
+                        if (messageQueue->try_dequeue(data))
+                        {
+                            data.clear();
+
+                            // Edge-SLAM: debug
+                            cout << "log,Tracking::tcp_receive,dropped " << name << endl;
+                        }
+                    }
+                    messageQueue->enqueue(msg);
+
+                    // Edge-SLAM: debug
+                    cout << "log,Tracking::tcp_receive,received " << name << endl;
+                }
             }
         }
     }
