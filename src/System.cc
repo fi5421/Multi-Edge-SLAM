@@ -481,9 +481,9 @@ void System::SaveKeyFrameTrajectoryTUM(const string &filename)
     for(size_t i=0; i<vpKFs.size(); i++)
     {
         KeyFrame* pKF = vpKFs[i];
-
+        
        // pKF->SetPose(pKF->GetPose()*Two);
-
+        
         if(pKF->isBad())
             continue;
 
