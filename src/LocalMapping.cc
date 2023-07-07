@@ -94,6 +94,7 @@ LocalMapping::LocalMapping(Map *pMap, KeyFrameDatabase* pKFDB, ORBVocabulary* pV
 void LocalMapping::keyframeCallback(const std::string& msg)
 {
     // If Local Mapping is freezed by a Loop Closure do not insert keyframes
+    cout<<"log,Key Frame Callback\n";
     if(isStopped() || stopRequested())
         return;
 
@@ -169,6 +170,7 @@ void LocalMapping::keyframeCallback(const std::string& msg)
     msRelocNewFFlag = false;
 
     SetNotStop(false);
+    cout<<"function returning\n";
 }
 
 void LocalMapping::SetLoopCloser(LoopClosing* pLoopCloser)

@@ -31,11 +31,13 @@
 
 // Edge-SLAM
 #include <string>
+#include <signal.h>
 
 using namespace std;
 
 void LoadImages(const string &strSequence, vector<string> &vstrImageFilenames,
                 vector<double> &vTimestamps);
+
 
 int main(int argc, char **argv)
 {
@@ -148,6 +150,10 @@ int main(int argc, char **argv)
 
         // Edge-SLAM: split shutdown between client and server
         // Stop all threads
+            while(1){
+                sleep(5);
+                cout<<"main thread sleeping\n";
+            }
         SLAM.ServerShutdown();
 
         // Save camera trajectory

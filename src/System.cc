@@ -99,14 +99,15 @@ System::System(const string &strVocFile, const string &strSettingsFile, std::str
         //Initialize the Loop Closing thread and launch
         mpLoopCloser = new LoopClosing(mpMap, mpKeyFrameDatabase, mpVocabulary, mSensor!=MONOCULAR);
         mptLoopClosing = new thread(&ORB_SLAM2::LoopClosing::Run, mpLoopCloser);
+
     }
 
     if (RunType.compare("client") == 0){
         //Initialize the Viewer thread and launch
         if(bUseViewer)
         {
-            mpViewer = new Viewer(this, mpFrameDrawer,mpMapDrawer,mpTracker,strSettingsFile);
-            mptViewer = new thread(&Viewer::Run, mpViewer);
+            // mpViewer = new Viewer(this, mpFrameDrawer,mpMapDrawer,mpTracker,strSettingsFile);
+            // mptViewer = new thread(&Viewer::Run, mpViewer);
             // changed
             mpTracker->SetViewer(mpViewer);
         }
@@ -123,6 +124,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, std::str
         mpLocalMapper->SetLoopCloser(mpLoopCloser);
         //mpLoopCloser->SetTracker(mpTracker);
         mpLoopCloser->SetLocalMapper(mpLocalMapper);
+        cout<<"local mapper set\n";
     }
 }
 

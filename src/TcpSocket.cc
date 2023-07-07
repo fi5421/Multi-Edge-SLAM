@@ -8,7 +8,7 @@
 #include "TcpSocket.h"
 
 // Empty constructor
-TcpSocket::TcpSocket(){}
+TcpSocket::TcpSocket() {}
 
 /**
  * Constructor - For Server Initialization
@@ -24,7 +24,7 @@ TcpSocket::TcpSocket(std::string ip_address, int port_number)
     this->port_number = port_number;
     this->isClient = false;
     this->setupSocket();
-    std::cout<<"TcpSocket::TcpSocket: Call method waitForConnection() method to open socket for listening to connections.\n";
+    std::cout << "TcpSocket::TcpSocket: Call method waitForConnection() method to open socket for listening to connections.\n";
     setAlive(true);
     setConnTimeOut(false);
 }
@@ -47,13 +47,13 @@ TcpSocket::TcpSocket(std::string ip_address, int port_number, std::string other_
     this->other_ip_address = other_ip_address.c_str();
     this->isClient = true;
 
-    bzero((char*)&this->otherAddress, sizeof(this->otherAddress));
-    this->otherAddress.sin_family       = AF_INET;
-    this->otherAddress.sin_port         = htons(this->other_port_number);
-    this->otherAddress.sin_addr.s_addr  = inet_addr(this->other_ip_address);
+    bzero((char *)&this->otherAddress, sizeof(this->otherAddress));
+    this->otherAddress.sin_family = AF_INET;
+    this->otherAddress.sin_port = htons(this->other_port_number);
+    this->otherAddress.sin_addr.s_addr = inet_addr(this->other_ip_address);
 
     this->setupSocket();
-    std::cout<<"TcpSocket::TcpSocket: Call method sendConnectionRequest() method to connect to the Server Socket.\n";
+    std::cout << "TcpSocket::TcpSocket: Call method sendConnectionRequest() method to connect to the Server Socket.\n";
     setAlive(true);
     setConnTimeOut(false);
 }
@@ -65,7 +65,7 @@ TcpSocket::TcpSocket(std::string ip_address, int port_number, std::string other_
  */
 void TcpSocket::setupSocket()
 {
-    std::cout<<"TcpSocket::setupSocket: Setting up socket.\n";
+    std::cout << "TcpSocket::setupSocket: Setting up socket.\n";
 
     this->mySocket = socket(AF_INET, SOCK_STREAM, 0);
     if (this->mySocket == -1)
@@ -79,12 +79,12 @@ void TcpSocket::setupSocket()
     this->myAddress.sin_port = htons(this->port_number);
     inet_pton(AF_INET, this->ip_address, &this->myAddress.sin_addr);
 
-    if (bind(this->mySocket, (sockaddr*)&this->myAddress, sizeof(this->myAddress)) == -1)
+    if (bind(this->mySocket, (sockaddr *)&this->myAddress, sizeof(this->myAddress)) == -1)
     {
         std::cout << "TcpSocket::setupSocket: Unable to bind socket to the Address.\n";
     }
 
-    std::cout<<"TcpSocket::setupSocket: Socket Initialized succesfully.\n";
+    std::cout << "TcpSocket::setupSocket: Socket Initialized succesfully.\n";
 }
 
 /**
@@ -96,43 +96,43 @@ void TcpSocket::setupSocket()
  */
 int TcpSocket::waitForConnection()
 {
-    std::cout<<"TcpSocket::waitForConnection: Listening for connections using a nonblocking socket.\n";
+    std::cout << "TcpSocket::waitForConnection: Listening for connections using a nonblocking socket.\n";
 
     // Set the Socket to Non-blocking mode
     int flags = fcntl(this->mySocket, F_GETFL);
     fcntl(this->mySocket, F_SETFL, flags | O_NONBLOCK);
 
-    if(listen(this->mySocket, 1)== -1)
+    if (listen(this->mySocket, 1) == -1)
     {
         return -1;
     }
     socklen_t clientSize = sizeof(this->otherSocket);
     int count = 0;
-    for(;;)
+    for (;;)
     {
-        otherSocket = accept(this->mySocket, (sockaddr*)&this->otherSocket, &clientSize);
+        otherSocket = accept(this->mySocket, (sockaddr *)&this->otherSocket, &clientSize);
         if (otherSocket == -1)
         {
             if (errno == EWOULDBLOCK)
             {
-                if(count % 15 == 0)
-                    std::cout<<"TcpSocket::waitForConnection: Still waiting for connection.\n";
+                if (count % 15 == 0)
+                    std::cout << "TcpSocket::waitForConnection: Still waiting for connection.\n";
                 count++;
                 std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             }
             else
             {
-                std::cout<<"TcpSocket::waitForConnection: Error when accepting connection.\n";
+                std::cout << "TcpSocket::waitForConnection: Error when accepting connection.\n";
                 return -1;
             }
         }
         else
         {
-            std::cout<<"TcpSocket::waitForConnection: Connected successfully.\n" ;
+            std::cout << "TcpSocket::waitForConnection: Connected successfully.\n";
             this->socketHandle = this->otherSocket;
 
             // Set the Socket to Blocking mode
-            std::cout<<"TcpSocket::waitForConnection: Switch socket to blocking.\n";
+            std::cout << "TcpSocket::waitForConnection: Switch socket to blocking.\n";
             flags = fcntl(this->mySocket, F_GETFL);
             fcntl(this->mySocket, F_SETFL, flags & (~O_NONBLOCK));
             return 1;
@@ -151,43 +151,43 @@ int TcpSocket::waitForConnection()
  */
 int TcpSocket::waitForConnection(int timeOut)
 {
-    std::cout<<"TcpSocket::waitForConnection(TimeOut): Listening for connections using a nonblocking socket.\n";
+    std::cout << "TcpSocket::waitForConnection(TimeOut): Listening for connections using a nonblocking socket.\n";
 
     // Set the Socket to Non-blocking mode
     int flags = fcntl(this->mySocket, F_GETFL);
     fcntl(this->mySocket, F_SETFL, flags | O_NONBLOCK);
 
-    if(listen(this->mySocket, 1)== -1)
+    if (listen(this->mySocket, 1) == -1)
     {
         return -1;
     }
     socklen_t clientSize = sizeof(this->otherSocket);
     int count = 0;
-    for(int i=0; i<timeOut; i++)
+    for (int i = 0; i < timeOut; i++)
     {
-        otherSocket = accept(this->mySocket, (sockaddr*)&this->otherSocket, &clientSize);
+        otherSocket = accept(this->mySocket, (sockaddr *)&this->otherSocket, &clientSize);
         if (otherSocket == -1)
         {
             if (errno == EWOULDBLOCK)
             {
-                if(count % 15 ==0)
-                    std::cout<<"TcpSocket::waitForConnection(TimeOut): Still waiting for connection.\n";
+                if (count % 15 == 0)
+                    std::cout << "TcpSocket::waitForConnection(TimeOut): Still waiting for connection.\n";
                 count++;
                 std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             }
             else
             {
-                std::cout<<"TcpSocket::waitForConnection(TimeOut): Error when accepting connection.\n";
+                std::cout << "TcpSocket::waitForConnection(TimeOut): Error when accepting connection.\n";
                 return -1;
             }
         }
         else
         {
-            std::cout<<"TcpSocket::waitForConnection(TimeOut): Connected successfully.\n" ;
+            std::cout << "TcpSocket::waitForConnection(TimeOut): Connected successfully.\n";
             this->socketHandle = this->otherSocket;
 
             // Set the Socket to Blocking mode
-            std::cout<<"TcpSocket::waitForConnection(TimeOut): Switch socket to blocking.\n";
+            std::cout << "TcpSocket::waitForConnection(TimeOut): Switch socket to blocking.\n";
             flags = fcntl(this->mySocket, F_GETFL);
             fcntl(this->mySocket, F_SETFL, flags & (~O_NONBLOCK));
             return 1;
@@ -195,7 +195,7 @@ int TcpSocket::waitForConnection(int timeOut)
     }
 
     // Set the Socket to Blocking mode
-    std::cout<<"TcpSocket::waitForConnection(TimeOut): No connection available. Switch socket to blocking and return.\n";
+    std::cout << "TcpSocket::waitForConnection(TimeOut): No connection available. Switch socket to blocking and return.\n";
     flags = fcntl(this->mySocket, F_GETFL);
     fcntl(this->mySocket, F_SETFL, flags & (~O_NONBLOCK));
     return -1;
@@ -209,12 +209,12 @@ int TcpSocket::waitForConnection(int timeOut)
  */
 void TcpSocket::disconnectConnection()
 {
-    std::cout<<"TcpSocket::disconnectConnection.\n";
+    std::cout << "TcpSocket::disconnectConnection.\n";
 
     close(this->mySocket);
-    std::cout<<"TcpSocket::disconnectConnection: Stopped listening for Connections\n";
+    std::cout << "TcpSocket::disconnectConnection: Stopped listening for Connections\n";
     close(this->otherSocket);
-    std::cout<<"TcpSocket::disconnectConnection: Disconnected the connected Socket\n";
+    std::cout << "TcpSocket::disconnectConnection: Disconnected the connected Socket\n";
 }
 
 /**
@@ -225,14 +225,23 @@ void TcpSocket::disconnectConnection()
  */
 void TcpSocket::reconnect()
 {
-    std::cout<<"TcpSocket::reconnect: Reconnecting. Please Wait.\n";
+    try
+    {
+        std::cout << "TcpSocket::reconnect: Reconnecting. Please Wait.\n";
 
-    this->disconnectConnection();
-    this->setupSocket();
-    if(this->isClient)
-        this->sendConnectionRequest();
-    else
-        this->waitForConnection();
+        this->disconnectConnection();
+        this->setupSocket();
+        if (this->isClient)
+            this->sendConnectionRequest();
+        else
+            this->waitForConnection();
+    }
+    catch (const std::exception &exc)
+    {
+        std::cout << "Exceptionn in TCP receive\n";
+        std::cerr << exc.what();
+        return;
+    }
 }
 
 /**
@@ -244,73 +253,82 @@ void TcpSocket::reconnect()
  * @param message String message which needs to be sent
  * @return returns 1 if sent successfullt, else return 0
  */
-int TcpSocket::sendMessage(std::string& message)
+int TcpSocket::sendMessage(std::string &message)
 {
-    std::cout<<"TcpSocket::sendMessage.\n";
-
-    // Send message size
-    unsigned int messageLen = message.size();
-    std::cout<<"TcpSocket::sendMessage: Message length: "<<messageLen<<"\n";
-    if(!(send(this->socketHandle, &messageLen, sizeof(unsigned int), MSG_NOSIGNAL) == sizeof(unsigned int)))
+    try
     {
-        std::cout<<"TcpSocket::sendMessage: Incorrect send size. Reattempting to connect.\n";
-        this->reconnect();
-        return 0;
-    }
+        std::cout << "TcpSocket::sendMessage.\n";
 
-    // Receive ack
-    {
-        std::cout<<"TcpSocket::sendMessage: Waiting for first acknowledgement.\n";
-        char buf[128];
-        memset(buf,0,128);
-        if(recv(this->socketHandle, buf, 128, 0) != 2)
+        // Send message size
+        unsigned int messageLen = message.size();
+        std::cout << "TcpSocket::sendMessage: Message length: " << messageLen << "\n";
+        if (!(send(this->socketHandle, &messageLen, sizeof(unsigned int), MSG_NOSIGNAL) == sizeof(unsigned int)))
         {
-            std::cout<<"TcpSocket::sendMessage: Incorrect acknowledgement received. Reattempting to reconnect.\n";
+            std::cout << "TcpSocket::sendMessage: Incorrect send size. Reattempting to connect.\n";
             this->reconnect();
             return 0;
         }
-    }
 
-    // Send message
-    int offset = 0;
-    unsigned int payloadSize = 1024;
-    while(messageLen > payloadSize)
-    {
-        if(!(send(this->socketHandle, (&message[0]) + offset, payloadSize, MSG_NOSIGNAL) == payloadSize))
+        // Receive ack
         {
-            std::cout<<"TcpSocket::sendMessage: Incorrect send size. Reattempting to connect.\n";
-            this->reconnect();
-            return 0;
+            std::cout << "TcpSocket::sendMessage: Waiting for first acknowledgement.\n";
+            char buf[128];
+            memset(buf, 0, 128);
+            if (recv(this->socketHandle, buf, 128, 0) != 2)
+            {
+                std::cout << "TcpSocket::sendMessage: Incorrect acknowledgement received. Reattempting to reconnect.\n";
+                this->reconnect();
+                return 0;
+            }
         }
-        offset += payloadSize;
-        messageLen -= payloadSize;
-    }
 
-    if(messageLen > 0)
-    {
-        if(!(send(this->socketHandle, (&message[0]) + offset, messageLen, MSG_NOSIGNAL) == messageLen))
+        // Send message
+        int offset = 0;
+        unsigned int payloadSize = 1024;
+        while (messageLen > payloadSize)
         {
-            std::cout<<"TcpSocket::sendMessage: Incorrect send size. Reattempting to connect.\n";
-            this->reconnect();
-            return 0;
+            if (!(send(this->socketHandle, (&message[0]) + offset, payloadSize, MSG_NOSIGNAL) == payloadSize))
+            {
+                std::cout << "TcpSocket::sendMessage: Incorrect send size. Reattempting to connect.\n";
+                this->reconnect();
+                return 0;
+            }
+            offset += payloadSize;
+            messageLen -= payloadSize;
         }
-    }
 
-    // Receive ack
-    {
-        std::cout<<"TcpSocket::sendMessage: Waiting for second acknowledgement.\n";
-        char buf[128];
-        memset(buf,0,128);
-        if(recv(this->socketHandle, buf, 128, 0) != 2)
+        if (messageLen > 0)
         {
-            std::cout<<"TcpSocket::sendMessage: Incorrect acknowledgement received. Reattempting to reconnect.\n";
-            this->reconnect();
-            return 0;
+            if (!(send(this->socketHandle, (&message[0]) + offset, messageLen, MSG_NOSIGNAL) == messageLen))
+            {
+                std::cout << "TcpSocket::sendMessage: Incorrect send size. Reattempting to connect.\n";
+                this->reconnect();
+                return 0;
+            }
         }
-    }
 
-    std::cout<<"TcpSocket::sendMessage: Data sent succesfully.\n";
-    return 1;
+        // Receive ack
+        {
+            std::cout << "TcpSocket::sendMessage: Waiting for second acknowledgement.\n";
+            char buf[128];
+            memset(buf, 0, 128);
+            if (recv(this->socketHandle, buf, 128, 0) != 2)
+            {
+                std::cout << "TcpSocket::sendMessage: Incorrect acknowledgement received. Reattempting to reconnect.\n";
+                this->reconnect();
+                return 0;
+            }
+        }
+
+        std::cout << "TcpSocket::sendMessage: Data sent succesfully.\n";
+        return 1;
+    }
+    catch (const std::exception &exc)
+    {
+        std::cout << "Exceptionn in TCP receive\n";
+        std::cerr << exc.what();
+        return 1;
+    }
 }
 
 /**
@@ -323,54 +341,64 @@ int TcpSocket::sendMessage(std::string& message)
  */
 std::string TcpSocket::recieveMessage()
 {
-    std::cout<<"TcpSocket::receiveMessage.\n";
-
-    // Receive message size
-    unsigned int sizeOfMessage;
-    recv(this->socketHandle, &sizeOfMessage, sizeof(unsigned int), 0);
-    std::cout<<"TcpSocket::recieveMessage: Expecting message of size: "<<sizeOfMessage<<"\n";
-
-    // Send ack
-    if(!(send(this->socketHandle, "OK", 2, MSG_NOSIGNAL) == 2))
+    try
     {
-        std::cout<<"TcpSocket::recieveMessage: Incorrect send size. Reattempting to connect.\n";
-        this->reconnect();
-        return "";
-    }
+        std::cout << "TcpSocket::receiveMessage.\n";
 
-    // Receive message
-    const unsigned int MAX_BUF_LENGTH = 1024;
-    std::vector<char> buffer(MAX_BUF_LENGTH);
-    std::string rcv;
-    int bytesReceived = 0;
-    do {
-        bytesReceived = recv(this->socketHandle, &buffer[0], MAX_BUF_LENGTH, 0);
+        // Receive message size
+        unsigned int sizeOfMessage;
+        recv(this->socketHandle, &sizeOfMessage, sizeof(unsigned int), 0);
+        std::cout << "TcpSocket::recieveMessage: Expecting message of size: " << sizeOfMessage << "\n";
 
-        // append string from buffer.
-        if(bytesReceived < 1)
+        // Send ack
+        if (!(send(this->socketHandle, "OK", 2, MSG_NOSIGNAL) == 2))
         {
-            std::cout<<"TcpSocket::recieveMessage: Error, Reconnecting again.\n";
+            std::cout << "TcpSocket::recieveMessage: Incorrect send size. Reattempting to connect.\n";
             this->reconnect();
             return "";
         }
-        else
+
+        // Receive message
+        const unsigned int MAX_BUF_LENGTH = 1024;
+        std::vector<char> buffer(MAX_BUF_LENGTH);
+        std::string rcv;
+        int bytesReceived = 0;
+        do
         {
-            rcv.append(&buffer[0], (&buffer[0])+bytesReceived);
+            bytesReceived = recv(this->socketHandle, &buffer[0], MAX_BUF_LENGTH, 0);
+
+            // append string from buffer.
+            if (bytesReceived < 1)
+            {
+                std::cout << "TcpSocket::recieveMessage: Error, Reconnecting again.\n";
+                this->reconnect();
+                return "";
+            }
+            else
+            {
+                rcv.append(&buffer[0], (&buffer[0]) + bytesReceived);
+            }
+            sizeOfMessage -= bytesReceived;
+        } while (sizeOfMessage > 0);
+
+        std::cout << "TcpSocket::recieveMessage: Remaining size is " << sizeOfMessage << ", Size of recieved message is " << rcv.size() << "\n";
+
+        // Send ack
+        if (!(send(this->socketHandle, "OK", 2, MSG_NOSIGNAL) == 2))
+        {
+            std::cout << "TcpSocket::recieveMessage: Incorrect send size. Reattempting to connect.\n";
+            this->reconnect();
+            return "";
         }
-        sizeOfMessage -= bytesReceived;
-    } while(sizeOfMessage > 0);
 
-    std::cout<<"TcpSocket::recieveMessage: Remaining size is "<<sizeOfMessage<<", Size of recieved message is "<<rcv.size()<<"\n";
-
-    // Send ack
-    if(!(send(this->socketHandle, "OK", 2, MSG_NOSIGNAL) == 2))
+        return rcv;
+    }
+    catch (const std::exception &exc)
     {
-        std::cout<<"TcpSocket::recieveMessage: Incorrect send size. Reattempting to connect.\n";
-        this->reconnect();
+        std::cout << "Exceptionn in TCP receive\n";
+        std::cerr << exc.what();
         return "";
     }
-
-    return rcv;
 }
 
 /**
@@ -388,32 +416,40 @@ std::string TcpSocket::recieveMessage()
  */
 int TcpSocket::sendConnectionRequest(int timeOut)
 {
-    std::cout<<"TcpSocket::sendConnectionRequest(TimeOut).\n";
-
-    std::mutex m;
-    std::condition_variable cv;
-    int retValue = -1;
-
-    setConnTimeOut(false);
-    std::thread t([&cv, &retValue, this]()
-                  {
-                      retValue = TcpSocket::sendConnectionRequest();
-                      cv.notify_one();
-                  });
-
-    t.detach();
-
+    try
     {
-        std::unique_lock<std::mutex> l(m);
-        if(cv.wait_for(l, std::chrono::milliseconds(timeOut)) == std::cv_status::timeout)
-        {
-            setConnTimeOut(true);
-            cv.wait(l);
-            std::cout<<"TcpSocket::sendConnectionRequest(TimeOut): Unable to connect.\n";
-        }
-    }
+        std::cout << "TcpSocket::sendConnectionRequest(TimeOut).\n";
 
-    return retValue;
+        std::mutex m;
+        std::condition_variable cv;
+        int retValue = -1;
+
+        setConnTimeOut(false);
+        std::thread t([&cv, &retValue, this]()
+                      {
+                      retValue = TcpSocket::sendConnectionRequest();
+                      cv.notify_one(); });
+
+        t.detach();
+
+        {
+            std::unique_lock<std::mutex> l(m);
+            if (cv.wait_for(l, std::chrono::milliseconds(timeOut)) == std::cv_status::timeout)
+            {
+                setConnTimeOut(true);
+                cv.wait(l);
+                std::cout << "TcpSocket::sendConnectionRequest(TimeOut): Unable to connect.\n";
+            }
+        }
+
+        return retValue;
+    }
+    catch (const std::exception &exc)
+    {
+        std::cout << "Exceptionn in TCP receive\n";
+        std::cerr << exc.what();
+        return 0;
+    }
 }
 
 /**
@@ -431,23 +467,23 @@ int TcpSocket::sendConnectionRequest(int timeOut)
  */
 int TcpSocket::sendConnectionRequest()
 {
-    std::cout<<"TcpSocket::sendConnectionRequest.\n";
+    std::cout << "TcpSocket::sendConnectionRequest.\n";
 
     int connected = -1;
     int count = 0;
-    while(connected != 0 )
+    while (connected != 0)
     {
-        if((!checkAlive()) || (checkConnTimeOut()))
+        if ((!checkAlive()) || (checkConnTimeOut()))
             return -1;
 
-        connected = connect(this->mySocket, (struct sockaddr*)&otherAddress, sizeof(this->otherAddress));
-        if((count % 15 == 0) && (connected != 0))
-            std::cout<<"TcpSocket::sendConnectionRequest: Still trying to connect.\n";
+        connected = connect(this->mySocket, (struct sockaddr *)&otherAddress, sizeof(this->otherAddress));
+        if ((count % 15 == 0) && (connected != 0))
+            std::cout << "TcpSocket::sendConnectionRequest: Still trying to connect.\n";
         count++;
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
     this->socketHandle = this->mySocket;
-    std::cout<<"TcpSocket::sendConnectionRequest: Socket connected.\n";
+    std::cout << "TcpSocket::sendConnectionRequest: Socket connected.\n";
     return 1;
 }
 
@@ -459,7 +495,7 @@ int TcpSocket::sendConnectionRequest()
  */
 void TcpSocket::setAlive(bool alive)
 {
-    std::cout<<"TcpSocket::setAlive: Set termination flag to " << alive << "\n";
+    std::cout << "TcpSocket::setAlive: Set termination flag to " << alive << "\n";
 
     std::unique_lock<std::mutex> lock(isAliveMutex);
     isAlive = alive;
@@ -473,7 +509,7 @@ void TcpSocket::setAlive(bool alive)
  */
 bool TcpSocket::checkAlive()
 {
-    //std::cout<<"TcpSocket::checkAlive: Check termination flag.\n";
+    // std::cout<<"TcpSocket::checkAlive: Check termination flag.\n";
 
     std::unique_lock<std::mutex> lock(isAliveMutex);
     return isAlive;
@@ -487,7 +523,7 @@ bool TcpSocket::checkAlive()
  */
 void TcpSocket::setConnTimeOut(bool timeOut)
 {
-    std::cout<<"TcpSocket::setConnTimeOut: Set connection timeout flag to " << timeOut << "\n";
+    std::cout << "TcpSocket::setConnTimeOut: Set connection timeout flag to " << timeOut << "\n";
 
     std::unique_lock<std::mutex> lock(connTimeOutMutex);
     connTimeOut = timeOut;
@@ -501,7 +537,7 @@ void TcpSocket::setConnTimeOut(bool timeOut)
  */
 bool TcpSocket::checkConnTimeOut()
 {
-    //std::cout<<"TcpSocket::checkConnTimeOut: Check connection timeout flag.\n";
+    // std::cout<<"TcpSocket::checkConnTimeOut: Check connection timeout flag.\n";
 
     std::unique_lock<std::mutex> lock(connTimeOutMutex);
     return connTimeOut;
@@ -517,7 +553,7 @@ bool TcpSocket::checkConnTimeOut()
  */
 TcpSocket::~TcpSocket()
 {
-    std::cout<<"TcpSocket::~TcpSocket: Destructor.\n";
+    std::cout << "TcpSocket::~TcpSocket: Destructor.\n";
 
     shutdown(this->mySocket, 2);
 
@@ -525,7 +561,7 @@ TcpSocket::~TcpSocket()
     setConnTimeOut(true);
 
     close(this->mySocket);
-    std::cout<<"TcpSocket::~TcpSocket: Stopped listening for Connections\n";
+    std::cout << "TcpSocket::~TcpSocket: Stopped listening for Connections\n";
     close(this->otherSocket);
-    std::cout<<"TcpSocket::~TcpSocket: Disconnected the connected Socket\n";
+    std::cout << "TcpSocket::~TcpSocket: Disconnected the connected Socket\n";
 }
