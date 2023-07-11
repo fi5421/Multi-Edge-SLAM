@@ -59,7 +59,7 @@ int main(int argc, char **argv)
     ros::start();
     if((argc != 4) || ((RunType.compare("client") != 0) && (RunType.compare("server") != 0) && (RunType.compare("server2") != 0)))
     {
-        cerr << endl << "Usage: rosrun Edge_SLAM RGBD VOC_PATH SETTINGS_PATH RUN_TYPE(client|server)" << endl;
+        cerr << endl << "Usage: rosrun Edge_SLAM RGBD VOC_PATH SETTINGS_PATH RUN_TYPE(client|server)1" << endl;
         ros::shutdown();
         return 1;
     }
