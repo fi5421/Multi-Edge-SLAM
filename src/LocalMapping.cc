@@ -172,6 +172,11 @@ void LocalMapping::keyframeCallback(const std::string& msg)
 
     SetNotStop(false);
     cout<<"function returning\n";
+    }catch (const std::exception &exc)
+    {
+        std::cout << "Exceptionn in TCP receive\n";
+        std::cerr << exc.what();
+        return;
     }
 }
 
@@ -200,7 +205,7 @@ void LocalMapping::Reset()
         while(!mpViewer->isStopped())
             usleep(3000);
     }*/
-
+    try{
     // Reset Loop Closing
     cout << "Reseting Loop Closing...";
     mpLoopCloser->RequestReset();
@@ -220,10 +225,17 @@ void LocalMapping::Reset()
     /* Edge-SLAM: disabled because viewer is disabled on server
     if(mpViewer)
         mpViewer->Release();*/
+    }catch (const std::exception &exc)
+    {
+        std::cout << "Exceptionn in TCP receive\n";
+        std::cerr << exc.what();
+        return;
+    }
 }
 
 void LocalMapping::Run()
 {
+    try{
     mbFinished = false;
 
     while(1)
@@ -339,16 +351,30 @@ void LocalMapping::Run()
     }
 
     SetFinish();
+    }catch (const std::exception &exc)
+    {
+        std::cout << "Exceptionn in TCP receive\n";
+        std::cerr << exc.what();
+        return;
+    }
+    
 }
 
 void LocalMapping::InsertKeyFrame(KeyFrame *pKF)
 {
+    try{
     unique_lock<mutex> lock(mMutexNewKFs);
     mlNewKeyFrames.push_back(pKF);
     mbAbortBA=true;
 
     // Edge-SLAM: debug
     cout << "log,LocalMapping::InsertKeyFrame,queue size " << mlNewKeyFrames.size() << endl;
+    }catch (const std::exception &exc)
+    {
+        std::cout << "Exceptionn in TCP receive\n";
+        std::cerr << exc.what();
+        return;
+    }
 }
 
 
@@ -360,6 +386,7 @@ bool LocalMapping::CheckNewKeyFrames()
 
 void LocalMapping::ProcessNewKeyFrame()
 {
+    try{
     {
         unique_lock<mutex> lock(mMutexNewKFs);
         mpCurrentKeyFrame = mlNewKeyFrames.front();
@@ -446,10 +473,17 @@ void LocalMapping::ProcessNewKeyFrame()
 
     // Insert Keyframe in Map
     mpMap->AddKeyFrame(mpCurrentKeyFrame);
+    }catch (const std::exception &exc)
+    {
+        std::cout << "Exceptionn in TCP receive\n";
+        std::cerr << exc.what();
+        return;
+    }
 }
 
 void LocalMapping::MapPointCulling()
 {
+    try{
     // Check Recent Added MapPoints
     list<MapPoint*>::iterator lit = mlpRecentAddedMapPoints.begin();
     const unsigned long int nCurrentKFid = mpCurrentKeyFrame->mnId;
@@ -483,10 +517,17 @@ void LocalMapping::MapPointCulling()
         else
             lit++;
     }
+    }catch (const std::exception &exc)
+    {
+        std::cout << "Exceptionn in TCP receive\n";
+        std::cerr << exc.what();
+        return;
+    }
 }
 
 void LocalMapping::CreateNewMapPoints()
 {
+    try{
     // Retrieve neighbor keyframes in covisibility graph
     int nn = 10;
     if(mbMonocular)
@@ -731,10 +772,17 @@ void LocalMapping::CreateNewMapPoints()
             nnew++;
         }
     }
+    }catch (const std::exception &exc)
+    {
+        std::cout << "Exceptionn in TCP receive\n";
+        std::cerr << exc.what();
+        return;
+    }
 }
 
 void LocalMapping::SearchInNeighbors()
 {
+    try{
     // Retrieve neighbor keyframes
     int nn = 10;
     if(mbMonocular)
@@ -813,10 +861,18 @@ void LocalMapping::SearchInNeighbors()
 
     // Update connections in covisibility graph
     mpCurrentKeyFrame->UpdateConnections();
+    }
+    catch (const std::exception &exc)
+    {
+        std::cout << "Exceptionn in TCP receive\n";
+        std::cerr << exc.what();
+        return;
+    }
 }
 
 cv::Mat LocalMapping::ComputeF12(KeyFrame *&pKF1, KeyFrame *&pKF2)
 {
+    
     cv::Mat R1w = pKF1->GetRotation();
     cv::Mat t1w = pKF1->GetTranslation();
     cv::Mat R2w = pKF2->GetRotation();
@@ -869,6 +925,7 @@ bool LocalMapping::stopRequested()
 
 void LocalMapping::Release()
 {
+    try{
     unique_lock<mutex> lock(mMutexStop);
     unique_lock<mutex> lock2(mMutexFinish);
     if(mbFinished)
@@ -880,6 +937,12 @@ void LocalMapping::Release()
     mlNewKeyFrames.clear();
 
     cout << "Local Mapping RELEASE" << endl;
+    }catch (const std::exception &exc)
+    {
+        std::cout << "Exceptionn in TCP receive\n";
+        std::cerr << exc.what();
+        return;
+    }
 }
 
 bool LocalMapping::AcceptKeyFrames()
@@ -913,6 +976,7 @@ void LocalMapping::InterruptBA()
 
 void LocalMapping::KeyFrameCulling()
 {
+    try{
     // Check redundant keyframes (only local keyframes)
     // A keyframe is considered redundant if the 90% of the MapPoints it sees, are seen
     // in at least other 3 keyframes (in the same or finer scale)
@@ -975,6 +1039,12 @@ void LocalMapping::KeyFrameCulling()
         if(nRedundantObservations>0.9*nMPs)
             pKF->SetBadFlag();
     }
+    }catch (const std::exception &exc)
+    {
+        std::cout << "Exceptionn in TCP receive\n";
+        std::cerr << exc.what();
+        return;
+    }
 }
 
 cv::Mat LocalMapping::SkewSymmetricMatrix(const cv::Mat &v)
@@ -1005,6 +1075,7 @@ void LocalMapping::RequestReset()
 
 void LocalMapping::ResetIfRequested()
 {
+    try{
     unique_lock<mutex> lock(mMutexReset);
     if(mbResetRequested)
     {
@@ -1057,6 +1128,11 @@ void LocalMapping::ResetIfRequested()
 
         // Edge-SLAM
         cout << "Edge-SLAM server reset is complete" << endl;
+    }}catch (const std::exception &exc)
+    {
+        std::cout << "Exceptionn in TCP receive\n";
+        std::cerr << exc.what();
+        return;
     }
 }
 
@@ -1081,6 +1157,7 @@ bool LocalMapping::CheckFinish()
 
 void LocalMapping::SetFinish()
 {
+    try{
     // Edge-SLAM: terminate TCP threads
     keyframe_socket->~TcpSocket();
     frame_socket->~TcpSocket();
@@ -1092,6 +1169,12 @@ void LocalMapping::SetFinish()
     mbFinished = true;
     unique_lock<mutex> lock2(mMutexStop);
     mbStopped = true;
+    }catch (const std::exception &exc)
+    {
+        std::cout << "Exceptionn in TCP receive\n";
+        std::cerr << exc.what();
+        return;
+    }
 }
 
 bool LocalMapping::isFinished()
@@ -1103,6 +1186,7 @@ bool LocalMapping::isFinished()
 // Edge-SLAM: similar to Tracking::NeedNewKeyFrame(), but customized for local-mapping
 bool LocalMapping::NeedNewKeyFrame(KeyFrame* pKF)
 {
+    try{
     // If Local Mapping is freezed by a Loop Closure do not insert keyframes
     if(isStopped() || stopRequested())
         return false;
@@ -1158,11 +1242,19 @@ bool LocalMapping::NeedNewKeyFrame(KeyFrame* pKF)
     }
     else
         return false;
+
+    }catch (const std::exception &exc)
+    {
+        std::cout << "Exceptionn in TCP receive\n";
+        std::cerr << exc.what();
+        return false;
+    }
 }
 
 // Edge-SLAM
 void LocalMapping::frameCallback(const std::string& msg)
 {
+    try{
     // If Local Mapping is freezed by a Loop Closure do not process frame
     if(isStopped() || stopRequested())
         return;
@@ -1208,11 +1300,18 @@ void LocalMapping::frameCallback(const std::string& msg)
     delete F;
 
     SetNotStop(false);
+    }catch (const std::exception &exc)
+    {
+        std::cout << "Exceptionn in TCP receive\n";
+        std::cerr << exc.what();
+        return;
+    }
 }
 
 // Edge-SLAM
 void LocalMapping::sendLocalMapUpdate()
 {
+    try{
     cout << "log,LocalMapping::sendLocalMapUpdate,publish local map update" << endl;
 
     std::vector<std::string> KFsData;
@@ -1308,11 +1407,18 @@ void LocalMapping::sendLocalMapUpdate()
 
     // Set to false so no map update is sent until we receive a new keyframe
     msNewKFFlag = false;
+    }catch (const std::exception &exc)
+    {
+        std::cout << "Exceptionn in TCP receive\n";
+        std::cerr << exc.what();
+        return;
+    }
 }
 
 // Edge-SLAM: relocalization
 void LocalMapping::sendRelocMapUpdate()
 {
+    try{
     if(!vpCandidateKFs.empty())
     {
         // Relocalization map
@@ -1475,11 +1581,18 @@ void LocalMapping::sendRelocMapUpdate()
     usCandidateKFsId.clear();
     vpCandidateKFs.clear();
     msRelocNewFFlag = false;
+    }catch (const std::exception &exc)
+    {
+        std::cout << "Exceptionn in TCP receive\n";
+        std::cerr << exc.what();
+        return;
+    }
 }
 
 // Edge-SLAM: send function to be called on a separate thread
 void LocalMapping::tcp_send(moodycamel::BlockingConcurrentQueue<std::string>* messageQueue, TcpSocket* socketObject, std::string name)
 {
+    try{
     std::string msg;
     bool success = true;
 
@@ -1511,11 +1624,18 @@ void LocalMapping::tcp_send(moodycamel::BlockingConcurrentQueue<std::string>* me
             }
         }
     } while(1);
+    }catch (const std::exception &exc)
+    {
+        std::cout << "Exceptionn in TCP receive\n";
+        std::cerr << exc.what();
+        return;
+    }
 }
 
 // Edge-SLAM: receive function to be called on a separate thread
 void LocalMapping::tcp_receive(moodycamel::ConcurrentQueue<std::string>* messageQueue, TcpSocket* socketObject, unsigned int maxQueueSize, std::string name)
 {
+    try{
     // Here the while(1) won't cause busy waiting as the implementation of receive function is blocking.
     while(1)
     {
@@ -1541,6 +1661,12 @@ void LocalMapping::tcp_receive(moodycamel::ConcurrentQueue<std::string>* message
 
             cout << "log,LocalMapping::tcp_receive,received " << name << endl;
         }
+    }
+    }catch (const std::exception &exc)
+    {
+        std::cout << "Exceptionn in TCP receive\n";
+        std::cerr << exc.what();
+        return;
     }
 }
 
