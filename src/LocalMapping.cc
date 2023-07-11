@@ -93,6 +93,7 @@ LocalMapping::LocalMapping(Map *pMap, KeyFrameDatabase* pKFDB, ORBVocabulary* pV
 // Edge-SLAM
 void LocalMapping::keyframeCallback(const std::string& msg)
 {
+    try{
     // If Local Mapping is freezed by a Loop Closure do not insert keyframes
     cout<<"log,Key Frame Callback\n";
     if(isStopped() || stopRequested())
@@ -171,6 +172,7 @@ void LocalMapping::keyframeCallback(const std::string& msg)
 
     SetNotStop(false);
     cout<<"function returning\n";
+    }
 }
 
 void LocalMapping::SetLoopCloser(LoopClosing* pLoopCloser)
