@@ -124,8 +124,8 @@ public:
     void MUReset();
 
     // Edge-SLAM: TCP
-    void static tcp_receive(moodycamel::ConcurrentQueue<std::string>* messageQueue, TcpSocket* socketObject, unsigned int maxQueueSize, std::string name, TcpSocket* nextEdgeSocket,int *edgeNumber);
-    void static tcp_send(moodycamel::BlockingConcurrentQueue<std::string>* messageQueue, TcpSocket* socketObject, std::string name, TcpSocket* nextEdgeSocket, int *edgeNumber);
+    void static tcp_receive(moodycamel::ConcurrentQueue<std::string>* messageQueue, TcpSocket* socketObject, unsigned int maxQueueSize, std::string name, TcpSocket* nextEdgeSocket,int *edgeNumber, string* slamMode);
+    void static tcp_send(moodycamel::BlockingConcurrentQueue<std::string>* messageQueue, TcpSocket* socketObject, std::string name, TcpSocket* nextEdgeSocket, int *edgeNumber, string* slamMode);
 
     // Edge-SLAM: added destructor to destroy all connections on object termination
     ~Tracking();
