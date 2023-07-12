@@ -234,7 +234,7 @@ bool LoopClosing::DetectLoop()
     {
         std::cout << "Exceptionn in TCP receive\n";
         std::cerr << exc.what();
-        return;
+        return false;
     }
 }
 
@@ -411,7 +411,7 @@ bool LoopClosing::ComputeSim3()
     {
         std::cout << "Exceptionn in TCP receive\n";
         std::cerr << exc.what();
-        return;
+        return false;
     }
 }
 
