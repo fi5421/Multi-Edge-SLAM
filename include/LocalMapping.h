@@ -187,6 +187,8 @@ protected:
     static bool msRelocNewFFlag;    // Flag used to only send reloc map update when a new reloc frame is received
     const static int RELOC_FREQ;    // Set to: after how many ms from last reloc map, a new map should be sent
     void sendRelocMapUpdate();
+
+    string slamMode;
 };
 
 } //namespace ORB_SLAM

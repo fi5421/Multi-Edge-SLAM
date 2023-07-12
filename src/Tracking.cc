@@ -186,7 +186,7 @@ namespace ORB_SLAM2
         cin.ignore();
         int *edgeNumberPointer=&edgeNumber;
 
-        slamMode = "N";
+        slamMode = "NORMAL";
         string *slamModePointer = &slamMode;
 
         // cout<<std::format("KeyFrame Connection port Edge1 {} Edge2 {}\n",port_number,port_number+1);

@@ -86,6 +86,8 @@ namespace ORB_SLAM2
 
         mnLastKeyFrameId = 0;
 
+        slamMode = "NORMAL";
+
         cout << "log,LocalMapping::LocalMapping,done" << endl;
     }
 
@@ -135,6 +137,10 @@ namespace ORB_SLAM2
 
         // Check keyframe after receiving it from the client
         // If first received keyframe then insert without additional checking
+        if ((tKF->mnId > 1) && (mpMap->KeyFramesInMap() < 1)) {
+            slamMode = "S-START"
+        }
+
         if ((tKF->mnId < 1) || (mpMap->KeyFramesInMap() < 1))
         {
             tKF->ChangeParent(NULL);
@@ -321,7 +327,10 @@ namespace ORB_SLAM2
                 // Send regular local map update
                 else if ((dCount > MAP_FREQ) && (mpMap->KeyFramesInMap() > 0) && (msNewKFFlag) && (!CheckReset()))
                 {
-                    sendLocalMapUpdate();
+                    if (slamMode != "S-START")
+                    {
+                        sendLocalMapUpdate();
+                    }
                 }
             }
 
