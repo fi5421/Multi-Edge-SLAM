@@ -104,6 +104,7 @@ bool LoopClosing::CheckNewKeyFrames()
 
 bool LoopClosing::DetectLoop()
 {
+    try{
     {
         unique_lock<mutex> lock(mMutexLoopQueue);
         mpCurrentKF = mlpLoopKeyFrameQueue.front();
@@ -228,10 +229,18 @@ bool LoopClosing::DetectLoop()
 
     mpCurrentKF->SetErase();
     return false;
+    }
+    catch (const std::exception &exc)
+    {
+        std::cout << "Exceptionn in TCP receive\n";
+        std::cerr << exc.what();
+        return;
+    }
 }
 
 bool LoopClosing::ComputeSim3()
 {
+    try{
     // For each consistent loop candidate we try to compute a Sim3
 
     const int nInitialCandidates = mvpEnoughConsistentCandidates.size();
@@ -398,11 +407,17 @@ bool LoopClosing::ComputeSim3()
         mpCurrentKF->SetErase();
         return false;
     }
-
+    }catch (const std::exception &exc)
+    {
+        std::cout << "Exceptionn in TCP receive\n";
+        std::cerr << exc.what();
+        return;
+    }
 }
 
 void LoopClosing::CorrectLoop()
 {
+    try{
     cout << "Loop detected!" << endl;
 
     // Send a stop signal to Local Mapping
@@ -584,10 +599,17 @@ void LoopClosing::CorrectLoop()
     mpLocalMapper->Release();
 
     mLastLoopKFid = mpCurrentKF->mnId;
+    }catch (const std::exception &exc)
+    {
+        std::cout << "Exceptionn in TCP receive\n";
+        std::cerr << exc.what();
+        return;
+    }
 }
 
 void LoopClosing::SearchAndFuse(const KeyFrameAndPose &CorrectedPosesMap)
 {
+    try{
     ORBmatcher matcher(0.8);
 
     for(KeyFrameAndPose::const_iterator mit=CorrectedPosesMap.begin(), mend=CorrectedPosesMap.end(); mit!=mend;mit++)
@@ -612,6 +634,12 @@ void LoopClosing::SearchAndFuse(const KeyFrameAndPose &CorrectedPosesMap)
                 pRep->Replace(mvpLoopMapPoints[i]);
             }
         }
+    }
+    }catch (const std::exception &exc)
+    {
+        std::cout << "Exceptionn in TCP receive\n";
+        std::cerr << exc.what();
+        return;
     }
 }
 
@@ -647,6 +675,7 @@ void LoopClosing::ResetIfRequested()
 
 void LoopClosing::RunGlobalBundleAdjustment(unsigned long nLoopKF)
 {
+    try{
     cout << "Starting Global Bundle Adjustment" << endl;
 
     int idx =  mnFullBAIdx;
@@ -757,6 +786,12 @@ void LoopClosing::RunGlobalBundleAdjustment(unsigned long nLoopKF)
 
         mbFinishedGBA = true;
         mbRunningGBA = false;
+    }
+    }catch (const std::exception &exc)
+    {
+        std::cout << "Exceptionn in TCP receive\n";
+        std::cerr << exc.what();
+        return;
     }
 }
 
