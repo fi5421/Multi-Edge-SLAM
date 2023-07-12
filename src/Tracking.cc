@@ -2357,32 +2357,62 @@ namespace ORB_SLAM2
                 }
             }
             
-            if (!socketObject->checkAlive())
+            if (*edgeNumber == 1)
             {
-                // Edge-SLAM: debug
-                cout << "log,Tracking::tcp_send,terminating thread" << endl;
-
-                break;
-            }
-
-            if (success)
-                messageQueue->wait_dequeue(msg);
-
-            if ((!msg.empty()) && (msg.compare("exit") != 0))
-            {
-                if (socketObject->sendMessage(msg) == 1)
+                if (!socketObject->checkAlive())
                 {
-                    success = true;
-                    msg.clear();
-
                     // Edge-SLAM: debug
-                    cout << "log,Tracking::tcp_send,sent " << name << endl;
+                    cout << "log,Tracking::tcp_send,terminating thread" << endl;
+
+                    break;
                 }
-                else
+
+                if (success)
+                    messageQueue->wait_dequeue(msg);
+
+                if ((!msg.empty()) && (msg.compare("exit") != 0))
                 {
-                    success = false;
+                    if (socketObject->sendMessage(msg) == 1)
+                    {
+                        success = true;
+                        msg.clear();
+
+                        // Edge-SLAM: debug
+                        cout << "log,Tracking::tcp_send,sent " << name << endl;
+                    }
+                    else
+                    {
+                        success = false;
+                    }
+                }
+            } else {
+                if (!nextEdgeSocket->checkAlive())
+                {
+                    // Edge-SLAM: debug
+                    cout << "log,Tracking::tcp_send,terminating thread" << endl;
+                    break;
+                }
+
+                if (success)
+                    messageQueue->wait_dequeue(msg);
+
+                if ((!msg.empty()) && (msg.compare("exit") != 0))
+                {
+                    if (nextEdgeSocket->sendMessage(msg) == 1)
+                    {
+                        success = true;
+                        msg.clear();
+
+                        // Edge-SLAM: debug
+                        cout << "log,Tracking::tcp_send,sent " << name << endl;
+                    }
+                    else
+                    {
+                        success = false;
+                    }
                 }
             }
+
         } while (1);
     }
 
