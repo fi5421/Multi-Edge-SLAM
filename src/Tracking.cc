@@ -978,12 +978,11 @@ namespace ORB_SLAM2
             }
 
             if (mCurrentFrame.mnId > 1380) {
-                if (slamMode[0] == 'H') {
+                if (slamMode[0] == 'S') {
                     ofstream f;
                     f.open("SwitchTime.txt");
                     f << "-------------HANDOVER FROM ONE EDGE TO ANOTHER at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
                     f.close();
-                    // edgeNumber = 2; 
                     slamMode = "H-START";
                 }
             }
