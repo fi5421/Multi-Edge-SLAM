@@ -141,6 +141,10 @@ namespace ORB_SLAM2
             slamMode = "S-START";
         }
 
+        if ((tKF->mnId > 690)) {
+            slamMode = "H-START";
+        }
+
         if ((tKF->mnId < 1) || (mpMap->KeyFramesInMap() < 1))
         {
             tKF->ChangeParent(NULL);
