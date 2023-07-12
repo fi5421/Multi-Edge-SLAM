@@ -271,7 +271,9 @@ protected:
     // Choosing edge to communicate
     int edgeNumber;
 
-};
+    // Choosing edge to communicate
+    string slamMode;
+};  
 
 } //namespace ORB_SLAM
 
