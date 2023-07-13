@@ -369,6 +369,8 @@ std::string TcpSocket::recieveMessage()
         this->reconnect();
         return "";
     }
+    
+    std::cout<<"Receive returning\n";
 
     return rcv;
 }
