@@ -153,6 +153,10 @@ int main(int argc, char **argv)
 
         // Edge-SLAM: split shutdown between client and server
         // Stop all threads
+        while(1){
+                sleep(5);
+                cout<<"main thread sleeping\n";
+        }
         SLAM.ServerShutdown();
 
         // Save camera trajectory
