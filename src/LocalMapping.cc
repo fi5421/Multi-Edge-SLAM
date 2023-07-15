@@ -137,11 +137,12 @@ namespace ORB_SLAM2
 
         // Check keyframe after receiving it from the client
         // If first received keyframe then insert without additional checking
+        cout << slamMode << endl;
         if ((tKF->mnId > 1) && (mpMap->KeyFramesInMap() < 1)) {
             slamMode = "S-START";
         }
 
-        if ((tKF->mnId > 690)) {
+        if ((tKF->mnId > 1380)) {
             slamMode = "H-START";
         }
 

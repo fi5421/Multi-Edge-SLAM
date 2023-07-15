@@ -967,20 +967,20 @@ namespace ORB_SLAM2
             // Edge-SLAM: debug
             cout << "log,Tracking::Track,end process frame " << mCurrentFrame.mnId << endl;
             if (mCurrentFrame.mnId > 690) {
-                if (slamMode[0] == 'N') {
+                if (slamMode == "NORMAL") {
                     ofstream f;
-                    f.open("SwitchTime.txt");
+                    f.open("myLogs.txt", std::ios::app);
                     f << "-------------START PRE-SYNCHRONIZATION at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
                     f.close();
                     // edgeNumber = 2; 
                     slamMode = "S-START";
                 }
             }
-
+            
             if (mCurrentFrame.mnId > 1380) {
-                if (slamMode[0] == 'S') {
+                if (slamMode == "S-START") {
                     ofstream f;
-                    f.open("SwitchTime.txt");
+                    f.open("myLogs.txt", std::ios::app);
                     f << "-------------HANDOVER FROM ONE EDGE TO ANOTHER at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
                     f.close();
                     slamMode = "H-START";
@@ -2317,16 +2317,24 @@ namespace ORB_SLAM2
     }
 
     // Edge-SLAM: send function to be called on a separate thread
-    void Tracking::tcp_send(moodycamel::BlockingConcurrentQueue<std::string> *messageQueue, TcpSocket *socketObject, std::string name, TcpSocket *nextEdgeSocket, int *edgeNumber, string* slamMode)
+    void Tracking::tcp_send(moodycamel::BlockingConcurrentQueue<std::string> *messageQueue, TcpSocket *socketObject, std::string name, TcpSocket *nextEdgeSocket, int *edgeNumber, string* slamModePointer)
     {
         std::string msg;
         bool success = true;
-
+        
         // This is not a busy wait because wait_dequeue function is blocking
         do
         {
-            if (*slamMode == "S-START")
+            ofstream f;
+            f.open("myLogs.txt", std::ios::app);
+            f << "thread = " << name << endl;
+            f.close();
+            if ((*slamModePointer) == "S-START")
             {
+                // ofstream f;
+                // f.open("myLogs.txt", std::ios::app);
+                // f << "SENDING KEYFRAME TO NEXT EDGE IN ADVANCE in thread " << name << endl;
+                // f.close();
                 if (name == "keyframe")
                 {
                     if (!nextEdgeSocket->checkAlive())
@@ -2417,7 +2425,7 @@ namespace ORB_SLAM2
     }
 
     // Edge-SLAM: receive function to be called on a separate thread
-    void Tracking::tcp_receive(moodycamel::ConcurrentQueue<std::string> *messageQueue, TcpSocket *socketObject, unsigned int maxQueueSize, std::string name, TcpSocket *nextEdgeSocket, int *edgeNumber, string* slamMode)
+    void Tracking::tcp_receive(moodycamel::ConcurrentQueue<std::string> *messageQueue, TcpSocket *socketObject, unsigned int maxQueueSize, std::string name, TcpSocket *nextEdgeSocket, int *edgeNumber, string* slamModePointer)
     {
         // Here the while(1) won't cause busy waiting as the implementation of receive function is blocking.
         while (1)
