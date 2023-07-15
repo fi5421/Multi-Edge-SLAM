@@ -972,7 +972,7 @@ namespace ORB_SLAM2
                     f.open("myLogs.txt", std::ios::app);
                     f << "-------------START PRE-SYNCHRONIZATION at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
                     f.close();
-                    // edgeNumber = 2; 
+                    
                     slamMode = "S-START";
                 }
             }
@@ -983,6 +983,7 @@ namespace ORB_SLAM2
                     f.open("myLogs.txt", std::ios::app);
                     f << "-------------HANDOVER FROM ONE EDGE TO ANOTHER at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
                     f.close();
+                    edgeNumber = 2; 
                     slamMode = "H-START";
                 }
             }
