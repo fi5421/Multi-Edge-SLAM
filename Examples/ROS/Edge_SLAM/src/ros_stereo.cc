@@ -94,6 +94,8 @@ int main(int argc, char **argv)
             cv::Mat K_l, K_r, P_l, P_r, R_l, R_r, D_l, D_r;
             cerr<<"here 1.1\n";
             fsSettings["LEFT.K"] >> K_l;
+            cerr<<"here 1.1.2\n";
+            
             fsSettings["RIGHT.K"] >> K_r;
             cerr<<"here 1.2\n";
             fsSettings["LEFT.P"] >> P_l;
