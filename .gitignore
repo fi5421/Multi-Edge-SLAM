@@ -68,6 +68,8 @@ rgbd_dataset_freiburg1_xyz.bag
 rgbd_dataset_freiburg2_desk.bag
 subset.bag
 subset_xyz.bag
+kitti_datasets/
+Euroc_Monocular/
 
 Vocabulary/
 build/
