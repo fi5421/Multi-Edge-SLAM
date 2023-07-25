@@ -258,6 +258,7 @@ protected:
     moodycamel::BlockingConcurrentQueue<std::string> keyframe_queue;
     moodycamel::BlockingConcurrentQueue<std::string> frame_queue;
     moodycamel::ConcurrentQueue<std::string> map_queue;
+    moodycamel::BlockingConcurrentQueue<std::string> localmap_queue;
     // Edge-SLAM: TcpSocket Objects
     TcpSocket* keyframe_socket;
     TcpSocket* frame_socket;
@@ -267,6 +268,7 @@ protected:
     TcpSocket* keyframe_socket2;
     TcpSocket* frame_socket2;
     TcpSocket* map_socket2;
+    TcpSocket* localmap_socket;
 
     // Choosing edge to communicate
     int edgeNumber;

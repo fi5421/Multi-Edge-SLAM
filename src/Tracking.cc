@@ -244,6 +244,13 @@ namespace ORB_SLAM2
 
         map_thread = new thread(&ORB_SLAM2::Tracking::tcp_receive, &map_queue, map_socket, 1, "map", map_socket2, edgeNumberPointer, slamModePointer);
 
+        // Creating new socket for forward local map updates to next edge
+        localmap_socket = new TcpSocket(ip, port_number, server_ip, port_number);
+        localmap_socket->sendConnectionRequest();
+
+        localmap_socket = new thread(&ORB_SLAM2::Tracking::tcp_send, &localmap_queue, localmap_socket, "localmap", localmap_socket, edgeNumberPointer, slamModePointer);
+        // Edge-SLAM: frame connection
+
         // Edge-SLAM: debug
         cout << "log,Tracking::Tracking,done" << endl;
     }
@@ -713,8 +720,10 @@ namespace ORB_SLAM2
         // MapUpdate regardless of initialization or not
         {
             string msg;
-            if (map_queue.try_dequeue(msg))
+            if (map_queue.try_dequeue(msg)) {
+                localmap_queue.enqueue(msg);
                 mapCallback(msg);
+            }
         }
 
         // Edge-SLAM: scope the locks
@@ -2336,31 +2345,70 @@ namespace ORB_SLAM2
                 // f.open("myLogs.txt", std::ios::app);
                 // f << "SENDING KEYFRAME TO NEXT EDGE IN ADVANCE in thread " << name << endl;
                 // f.close();
-                if (name == "keyframe")
+                if (name == "localmap")
                 {
-                    if (!nextEdgeSocket->checkAlive())
-                    {
-                        // Edge-SLAM: debug
-                        cout << "log,Tracking::tcp_send,terminating thread" << endl;
-                        break;
-                    }
-
                     if (success)
                         messageQueue->wait_dequeue(msg);
 
-                    if ((!msg.empty()) && (msg.compare("exit") != 0))
-                    {
-                        if (nextEdgeSocket->sendMessage(msg) == 1)
-                        {
-                            success = true;
-                            msg.clear();
+                    static vector<std::string> kfVector;
 
-                            // Edge-SLAM: debug
-                            cout << "log,Tracking::tcp_send,sent " << name << endl;
-                        }
-                        else
+                    // Deserialize local map update
+                    std::stringstream is(msg);
+                    boost::archive::text_iarchive ia(is);
+                    ia >> mapVec;
+                    is.clear();
+
+                    // Reconstruct each keyframe and send individually
+                    for (int i = 0; i < (int)kfVector.size(); i++)
+                    {
+                        // Reconstruct Keyframe
+                        KeyFrame *tKF = new KeyFrame();
                         {
-                            success = false;
+                            try
+                            {
+                                std::stringstream iis(kfVector[i]);
+                                boost::archive::text_iarchive iia(iis);
+                                iia >> tKF;
+                                iis.clear();
+                            }
+                            catch (boost::archive::archive_exception e)
+                            {
+                                cout << "log,Tracking::mapCallback,keyframe error: " << e.what() << endl;
+
+                                // Clear
+                                tKF = static_cast<KeyFrame *>(NULL);
+                                continue;
+                            }
+                        }
+
+                        // Serialize Keyframe
+                        std::ostringstream os;
+                        boost::archive::text_oarchive oa(os);
+                        oa << tKF;
+                        os.clear();
+                        
+                        // Send serialized keyframe
+                        if (!nextEdgeSocket->checkAlive())
+                        {
+                            // Edge-SLAM: debug
+                            cout << "log,Tracking::tcp_send,terminating thread" << endl;
+                            break;
+                        }
+
+                        if ((!(os.str()).empty()))
+                        {
+                            if (nextEdgeSocket->sendMessage(os.str()) == 1)
+                            {
+                                success = true;
+                                os.clear();
+
+                                // Edge-SLAM: debug
+                                cout << "log,Tracking::tcp_send,sent " << name << endl;
+                            }
+                            else
+                            {
+                                success = false;
+                            }
                         }
                     }
                 }
