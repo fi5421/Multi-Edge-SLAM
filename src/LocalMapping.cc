@@ -1538,10 +1538,7 @@ void LocalMapping::tcp_receive(moodycamel::ConcurrentQueue<std::string>* message
             messageQueue->enqueue(msg);
 
             cout << "log,LocalMapping::tcp_receive,received " << name << endl;
-        }else{
-            cout<<"Small Message received in "<<name<<" Tcp receive thread\n"<<"msg received: "<<msg<<endl;
         }
-    }
 }
 
 } //namespace ORB_SLAM

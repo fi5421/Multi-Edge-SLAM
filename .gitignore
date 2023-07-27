@@ -60,6 +60,7 @@ Examples/ROS/Edge_SLAM/Mono
 Examples/ROS/Edge_SLAM/RGBD
 Examples/ROS/Edge_SLAM/Stereo
 Examples/ROS/Edge_SLAM/build/
+Examples/ROS/Edge_SLAM/*.txt
 
 #dataset
 
