@@ -76,9 +76,10 @@ System::System(const string &strVocFile, const string &strSettingsFile, std::str
     mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
 
     //Create the Map
+    int edgeNumber =1;
     mpMap = new Map();
     if(RunType.compare("server2")==0)
-    {
+    {   edgeNumber=2;
         cout<<"changing server2 to server\n";
         RunType="server";
     }
@@ -98,7 +99,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, std::str
     } else if (RunType.compare("server") == 0){
         // Edge-SLAM: added settings file
         //Initialize the Local Mapping thread and launch
-        mpLocalMapper = new LocalMapping(mpMap, mpKeyFrameDatabase, mpVocabulary, strSettingsFile, mSensor==MONOCULAR);
+        mpLocalMapper = new LocalMapping(mpMap, mpKeyFrameDatabase, mpVocabulary, strSettingsFile, mSensor==MONOCULAR,edgeNumber);
         mptLocalMapping = new thread(&ORB_SLAM2::LocalMapping::Run,mpLocalMapper);
 
         //Initialize the Loop Closing thread and launch

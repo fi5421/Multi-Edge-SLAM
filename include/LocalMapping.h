@@ -50,7 +50,7 @@ class LocalMapping
 {
 public:
     // Edge-SLAM: added settings file path
-    LocalMapping(Map* pMap, KeyFrameDatabase* pKFDB, ORBVocabulary* pVoc, const string &strSettingPath, const float bMonocular);
+    LocalMapping(Map* pMap, KeyFrameDatabase* pKFDB, ORBVocabulary* pVoc, const string &strSettingPath, const float bMonocular, int edgeNumber);
 
     void SetLoopCloser(LoopClosing* pLoopCloser);
 
@@ -171,17 +171,26 @@ protected:
     std::thread* keyframe_thread ;
     std::thread* frame_thread ;
     std::thread* map_thread ;
+
+    // Map Subset thread
+    std::subset_thread;
+
+
     // Edge-SLAM: queue declarations
     moodycamel::ConcurrentQueue<std::string> keyframe_queue;
     moodycamel::ConcurrentQueue<std::string> frame_queue;
     moodycamel::BlockingConcurrentQueue<std::string> map_queue;
 
-    
+    //Map subset sending queue
+    moodycamel::BlockingConcurrentQueue<std::string> map_subset_queue;
 
     // Edge-SLAM: TcpSocket Objects
     TcpSocket* keyframe_socket;
     TcpSocket* frame_socket;
     TcpSocket* map_socket;
+
+    // Map Subset socket
+    TcpSocket* map_subset_socket;
 
     // Edge-SLAM: relocalization
     static vector<KeyFrame*> vpCandidateKFs;

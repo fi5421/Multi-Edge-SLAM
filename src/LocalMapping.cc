@@ -46,12 +46,13 @@ namespace ORB_SLAM2
     const int LocalMapping::RELOC_FREQ = 5000;
 
     // Edge-SLAM: added settings file path variable
-    LocalMapping::LocalMapping(Map *pMap, KeyFrameDatabase *pKFDB, ORBVocabulary *pVoc, const string &strSettingPath, const float bMonocular) : mbMonocular(bMonocular), mbResetRequested(false), mbFinishRequested(false), mbFinished(true), mpORBVocabulary(pVoc), mpMap(pMap), mpKeyFrameDB(pKFDB),
+    LocalMapping::LocalMapping(Map *pMap, KeyFrameDatabase *pKFDB, ORBVocabulary *pVoc, const string &strSettingPath, const float bMonocular, int edgeNumber) : mbMonocular(bMonocular), mbResetRequested(false), mbFinishRequested(false), mbFinished(true), mpORBVocabulary(pVoc), mpMap(pMap), mpKeyFrameDB(pKFDB),
                                                                                                                                                 mbAbortBA(false), mbStopped(false), mbStopRequested(false), mbNotStop(false), mbAcceptKeyFrames(true)
     {
         // Edge-SLAM: everything in this scope is new
 
         // Load camera parameters from settings file
+        cout<<"Edge Number "<<edgeNumber<<endl;
         cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
         float fps = fSettings["Camera.fps"];
         if (fps == 0)
@@ -64,6 +65,7 @@ namespace ORB_SLAM2
         string ip;
         string port_number;
         int port_int;
+        string subset_port;
         cout << "Enter the device IP address: ";
         // getline(cin, ip);
         ip="127.0.0.1";
@@ -71,6 +73,7 @@ namespace ORB_SLAM2
         cout << "Enter the port number used for keyframe connection: ";
         getline(cin, port_number);
         port_int=std::stoi(port_number);
+        
         
         keyframe_socket = new TcpSocket(ip, std::stoi(port_number));
         keyframe_socket->waitForConnection();
@@ -95,6 +98,14 @@ namespace ORB_SLAM2
         mnLastKeyFrameId = 0;
 
         cout << "log,LocalMapping::LocalMapping,done" << endl;
+
+
+        cout<<"Enter subset Port Number\n";
+        getline(cin, subset_port);
+        map_subset_socket= new TcpSocket(ip, std::stoi(subset_port));
+        map_subset_socket->waitForConnection();
+        subset_thread=new thread(&ORB_SLAM2::LocalMapping::tcp_send)
+
     }
 
     // Edge-SLAM
