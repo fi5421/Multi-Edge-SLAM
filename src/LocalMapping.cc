@@ -138,13 +138,27 @@ namespace ORB_SLAM2
         // Check keyframe after receiving it from the client
         // If first received keyframe then insert without additional checking
         cout << slamMode << endl;
-        if ((tKF->mnId > 1) && (mpMap->KeyFramesInMap() < 1)) {
-            slamMode = "S-START";
-        }
+        // if ((tKF->mnId > 1) && (mpMap->KeyFramesInMap() < 1)) {
+        //     if (slamMode == "NORMAL")
+        //     {
+        //         ofstream f;
+        //         f.open("myLogs_LocalMapping.txt", std::ios::app);
+        //         f << "-------------HAVE BEEN TOLD TO PRE-SYNCHRONIZE at time " << std::fixed << setprecision(6) <<  tKF->mTimeStamp << "-------------" << endl;
+        //         f.close();
+        //         slamMode = "S-START";
+        //     }            
+        // }
 
-        if ((tKF->mnId > 1380)) {
-            slamMode = "H-START";
-        }
+        // if ((tKF->mnId > 1333)) {
+        //     if (slamMode == "S-START")
+        //     {
+        //         ofstream f;
+        //         f.open("myLogs_LocalMapping.txt", std::ios::app);
+        //         f << "-------------HAVE BEEN TOLD TO HANDOVER at time " << std::fixed << setprecision(6) <<  tKF->mTimeStamp << "-------------" << endl;
+        //         f.close();
+        //         slamMode = "H-START";
+        //     }
+        // }
 
         if ((tKF->mnId < 1) || (mpMap->KeyFramesInMap() < 1))
         {
@@ -268,8 +282,24 @@ namespace ORB_SLAM2
                 // Edge-SLAM: check if new keyframe is received
                 {
                     string msg;
-                    if (keyframe_queue.try_dequeue(msg))
-                        keyframeCallback(msg);
+                    if (keyframe_queue.try_dequeue(msg)) {
+                        if (msg == "HANDOVER")
+                        {
+                            slamMode = "H-START";
+                            ofstream f;
+                            f.open("myLogs_LocalMapping.txt", std::ios::app);
+                            f << "-------------HAVE BEEN TOLD TO PRE-SYNCHRONIZE" << "-------------" << endl;
+                            f.close();
+                        } else if (msg == "PRE-SYNC") {
+                            slamMode = "S-START";
+                            ofstream f;
+                            f.open("myLogs_LocalMapping.txt", std::ios::app);
+                            f << "-------------HAVE BEEN TOLD TO HANDOVER" << "-------------" << endl;
+                            f.close();
+                        } else {
+                            keyframeCallback(msg);
+                        }
+                    } 
                 }
 
                 // Check recent MapPoints
