@@ -173,7 +173,7 @@ protected:
     std::thread* map_thread ;
 
     // Map Subset thread
-    std::subset_thread;
+    std::thread* subset_thread;
 
 
     // Edge-SLAM: queue declarations
@@ -182,7 +182,8 @@ protected:
     moodycamel::BlockingConcurrentQueue<std::string> map_queue;
 
     //Map subset sending queue
-    moodycamel::BlockingConcurrentQueue<std::string> map_subset_queue;
+    moodycamel::BlockingConcurrentQueue<std::string> map_subset_queue_send;
+    moodycamel::ConcurrentQueue<std::string> map_subset_queue_receive;
 
     // Edge-SLAM: TcpSocket Objects
     TcpSocket* keyframe_socket;

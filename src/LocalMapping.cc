@@ -47,12 +47,12 @@ namespace ORB_SLAM2
 
     // Edge-SLAM: added settings file path variable
     LocalMapping::LocalMapping(Map *pMap, KeyFrameDatabase *pKFDB, ORBVocabulary *pVoc, const string &strSettingPath, const float bMonocular, int edgeNumber) : mbMonocular(bMonocular), mbResetRequested(false), mbFinishRequested(false), mbFinished(true), mpORBVocabulary(pVoc), mpMap(pMap), mpKeyFrameDB(pKFDB),
-                                                                                                                                                mbAbortBA(false), mbStopped(false), mbStopRequested(false), mbNotStop(false), mbAcceptKeyFrames(true)
+                                                                                                                                                                mbAbortBA(false), mbStopped(false), mbStopRequested(false), mbNotStop(false), mbAcceptKeyFrames(true)
     {
         // Edge-SLAM: everything in this scope is new
 
         // Load camera parameters from settings file
-        cout<<"Edge Number "<<edgeNumber<<endl;
+        cout << "Edge Number " << edgeNumber << endl;
         cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
         float fps = fSettings["Camera.fps"];
         if (fps == 0)
@@ -68,29 +68,28 @@ namespace ORB_SLAM2
         string subset_port;
         cout << "Enter the device IP address: ";
         // getline(cin, ip);
-        ip="127.0.0.1";
+        ip = "127.0.0.1";
         // Keyframe connection
         cout << "Enter the port number used for keyframe connection: ";
         getline(cin, port_number);
-        port_int=std::stoi(port_number);
-        
-        
+        port_int = std::stoi(port_number);
+
         keyframe_socket = new TcpSocket(ip, std::stoi(port_number));
         keyframe_socket->waitForConnection();
         keyframe_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &keyframe_queue, keyframe_socket, 2, "keyframe");
         // Frame connection
         // cout << "Enter the port number used for frame connection: ";
         // getline(cin, port_number);
-        port_int+=2;
-        cout<<"Port number for Frame Connection: "<<port_int<<endl;
+        port_int += 2;
+        cout << "Port number for Frame Connection: " << port_int << endl;
         frame_socket = new TcpSocket(ip, port_int);
         frame_socket->waitForConnection();
         frame_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &frame_queue, frame_socket, 1, "frame");
         // Map connection
         // cout << "Enter the port number used for map connection: ";
         // getline(cin, port_number);
-        port_int+=2;
-        cout<<"Port Number for map connection "<<port_int<<endl;
+        port_int += 2;
+        cout << "Port Number for map connection " << port_int << endl;
         map_socket = new TcpSocket(ip, port_int);
         map_socket->waitForConnection();
         map_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_send, &map_queue, map_socket, "map");
@@ -99,13 +98,18 @@ namespace ORB_SLAM2
 
         cout << "log,LocalMapping::LocalMapping,done" << endl;
 
-
-        cout<<"Enter subset Port Number\n";
+        cout << "Enter subset Port Number\n";
         getline(cin, subset_port);
-        map_subset_socket= new TcpSocket(ip, std::stoi(subset_port));
+        map_subset_socket = new TcpSocket(ip, std::stoi(subset_port));
         map_subset_socket->waitForConnection();
-        subset_thread=new thread(&ORB_SLAM2::LocalMapping::tcp_send)
-
+        if (edgeNumber == 1)
+        {
+            subset_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_send, &map_subset_queue_send, map_subset_socket, "subset map");
+        }
+        else
+        {
+            subset_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &keyframe_queue, map_subset_socket, 1, "subset map");
+        }
     }
 
     // Edge-SLAM
@@ -128,9 +132,9 @@ namespace ORB_SLAM2
         // Making the Key Frame object
         try
         {
-            std::stringstream iis(msg);  //declaring msg as a stream
-            boost::archive::text_iarchive iia(iis);     //used for serializing
-            iia >> tKF;         //making a key frame object from the serialized boost object
+            std::stringstream iis(msg);             // declaring msg as a stream
+            boost::archive::text_iarchive iia(iis); // used for serializing
+            iia >> tKF;                             // making a key frame object from the serialized boost object
         }
         catch (boost::archive::archive_exception e)
         {
@@ -1547,6 +1551,9 @@ namespace ORB_SLAM2
 
             if (!msg.empty())
             {
+                if(name=="frame"){
+                    cout<<"Relocalization frame length "<<msg.length()<<endl;
+                }
                 if (messageQueue->size_approx() >= maxQueueSize)
                 {
                     string data;
