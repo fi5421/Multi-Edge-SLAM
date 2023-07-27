@@ -920,6 +920,9 @@ namespace ORB_SLAM2
 
             // Edge-SLAM: debug
             cout << "log,Tracking::Track,end process frame " << mCurrentFrame.mnId << endl;
+            if(mCurrentFrame.mnId>1000 && mCurrentFrame.mnId%10==0 && mCurrentFrame.mnId<1500){
+                frame_queue.enqueue("Temporary Message");
+            }
             cout<<"Number of frames in MAP:"<<mpMap->KeyFramesInMap()<<endl;
         }
     }

@@ -1523,8 +1523,10 @@ void LocalMapping::tcp_receive(moodycamel::ConcurrentQueue<std::string>* message
         }
         std::string msg = socketObject->recieveMessage();
 
-        if(!msg.empty())
+        if(!msg.empty() && msg.length()>100)
         {
+            
+
             if(messageQueue->size_approx() >= maxQueueSize)
             {
                 string data;
@@ -1536,6 +1538,8 @@ void LocalMapping::tcp_receive(moodycamel::ConcurrentQueue<std::string>* message
             messageQueue->enqueue(msg);
 
             cout << "log,LocalMapping::tcp_receive,received " << name << endl;
+        }else{
+            cout<<"Small Message received in "<<name<<" Tcp receive thread\n"<<"msg received: "<<msg<<endl;
         }
     }
 }
