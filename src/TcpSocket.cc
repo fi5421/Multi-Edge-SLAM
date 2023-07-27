@@ -372,6 +372,8 @@ std::string TcpSocket::recieveMessage()
     
     std::cout<<"Receive returning\n";
 
+    std::cout<<"Returning function\n";
+
     return rcv;
 }
 
