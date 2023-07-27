@@ -63,24 +63,32 @@ namespace ORB_SLAM2
         // Setting up connections
         string ip;
         string port_number;
+        int port_int;
         cout << "Enter the device IP address: ";
-        getline(cin, ip);
+        // getline(cin, ip);
+        ip="127.0.0.1";
         // Keyframe connection
         cout << "Enter the port number used for keyframe connection: ";
         getline(cin, port_number);
+        port_int=std::stoi(port_number);
+        
         keyframe_socket = new TcpSocket(ip, std::stoi(port_number));
         keyframe_socket->waitForConnection();
         keyframe_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &keyframe_queue, keyframe_socket, 2, "keyframe");
         // Frame connection
-        cout << "Enter the port number used for frame connection: ";
-        getline(cin, port_number);
-        frame_socket = new TcpSocket(ip, std::stoi(port_number));
+        // cout << "Enter the port number used for frame connection: ";
+        // getline(cin, port_number);
+        port_int+=2;
+        cout<<"Port number for Frame Connection: "<<port_int<<endl;
+        frame_socket = new TcpSocket(ip, port_int);
         frame_socket->waitForConnection();
         frame_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &frame_queue, frame_socket, 1, "frame");
         // Map connection
-        cout << "Enter the port number used for map connection: ";
-        getline(cin, port_number);
-        map_socket = new TcpSocket(ip, std::stoi(port_number));
+        // cout << "Enter the port number used for map connection: ";
+        // getline(cin, port_number);
+        port_int+=2;
+        cout<<"Port Number for map connection "<<port_int<<endl;
+        map_socket = new TcpSocket(ip, port_int);
         map_socket->waitForConnection();
         map_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_send, &map_queue, map_socket, "map");
 
@@ -105,11 +113,13 @@ namespace ORB_SLAM2
             return;
 
         KeyFrame *tKF = new KeyFrame();
+
+        // Making the Key Frame object
         try
         {
-            std::stringstream iis(msg);
-            boost::archive::text_iarchive iia(iis);
-            iia >> tKF;
+            std::stringstream iis(msg);  //declaring msg as a stream
+            boost::archive::text_iarchive iia(iis);     //used for serializing
+            iia >> tKF;         //making a key frame object from the serialized boost object
         }
         catch (boost::archive::archive_exception e)
         {
@@ -237,6 +247,7 @@ namespace ORB_SLAM2
                             data.clear();
                         }
                     }
+                    // inserts into  mlNewKeyFrames
                     keyframeCallback(msg);
                 }
                 else if (frame_queue.try_dequeue(msg))
