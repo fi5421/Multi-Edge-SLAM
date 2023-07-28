@@ -75,3 +75,5 @@ Euroc_Monocular/
 Vocabulary/
 build/
 
+.vscode/
+*.json
