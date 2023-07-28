@@ -254,19 +254,23 @@ protected:
     std::thread* keyframe_thread ;
     std::thread* frame_thread ;
     std::thread* map_thread ;
+    std::thread* msg_thread ;
     // Edge-SLAM: queue declarations
     moodycamel::BlockingConcurrentQueue<std::string> keyframe_queue;
     moodycamel::BlockingConcurrentQueue<std::string> frame_queue;
     moodycamel::ConcurrentQueue<std::string> map_queue;
+    moodycamel::BlockingConcurrentQueue<std::string> msg_queue;
     // Edge-SLAM: TcpSocket Objects
     TcpSocket* keyframe_socket;
     TcpSocket* frame_socket;
     TcpSocket* map_socket;
+    TcpSocket* msg_socket;
 
     // Next Edge socket
     TcpSocket* keyframe_socket2;
     TcpSocket* frame_socket2;
     TcpSocket* map_socket2;
+    TcpSocket* msg_socket2;
 
     // Choosing edge to communicate
     int edgeNumber;

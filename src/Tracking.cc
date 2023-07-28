@@ -244,6 +244,19 @@ namespace ORB_SLAM2
 
         map_thread = new thread(&ORB_SLAM2::Tracking::tcp_receive, &map_queue, map_socket, 1, "map", map_socket2, edgeNumberPointer, slamModePointer);
 
+        port_number++;
+        cout << "Map thread created " << port_number << endl;
+        getline(cin, dummy);
+        cout << "Msg Connection port Edge1 " << port_number << " Edge2 " << port_number + 1 << endl;
+
+        msg_socket = new TcpSocket(ip, port_number, server_ip, port_number);
+        msg_socket->sendConnectionRequest();
+        port_number++;
+        msg_socket2 = new TcpSocket(ip, port_number, server_ip, port_number);
+        msg_socket2->sendConnectionRequest();
+
+        msg_thread = new thread(&ORB_SLAM2::Tracking::tcp_send, &msg_queue, msg_socket, "message", msg_socket2, edgeNumberPointer, slamModePointer);
+        
         // Edge-SLAM: debug
         cout << "log,Tracking::Tracking,done" << endl;
     }
@@ -972,7 +985,7 @@ namespace ORB_SLAM2
                     f.open("myLogs_Tracking.txt", std::ios::app);
                     f << "-------------START PRE-SYNCHRONIZATION at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
                     f.close();
-                    keyframe_queue.enqueue("PRE-SYNC");
+                    msg_queue.enqueue("PRE-SYNC");
                     slamMode = "S-START";
                 }
             }
@@ -984,7 +997,7 @@ namespace ORB_SLAM2
                     f << "-------------HANDOVER FROM ONE EDGE TO ANOTHER at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
                     f.close();
                     edgeNumber = 2; 
-                    keyframe_queue.enqueue("HANDOVER");
+                    msg_queue.enqueue("HANDOVER");
                     slamMode = "H-START";
                 }
             }
@@ -2331,6 +2344,36 @@ namespace ORB_SLAM2
             f.open("myLogs_Tracking.txt", std::ios::app);
             f << "thread = " << name << endl;
             f.close();
+            if (name == "message")
+            {
+                if (!nextEdgeSocket->checkAlive())
+                {
+                    // Edge-SLAM: debug
+                    cout << "log,Tracking::tcp_send,terminating thread" << endl;
+                    break;
+                }
+
+                if (success)
+                    messageQueue->wait_dequeue(msg);
+
+                if ((!msg.empty()) && (msg.compare("exit") != 0))
+                {
+                    if (nextEdgeSocket->sendMessage(msg) == 1)
+                    {
+                        success = true;
+                        msg.clear();
+
+                        // Edge-SLAM: debug
+                        cout << "log,Tracking::tcp_send,sent " << name << endl;
+                    }
+                    else
+                    {
+                        success = false;
+                    }
+                }
+                continue;
+            }
+
             if ((*slamModePointer) == "S-START")
             {
                 // ofstream f;
@@ -2351,33 +2394,6 @@ namespace ORB_SLAM2
 
                     if ((!msg.empty()) && (msg.compare("exit") != 0))
                     {
-                        if ((msg == "PRE-SYNC") || (msg == "HANDOVER")) {
-                            ofstream f;
-                            f.open("myLogs_Tracking.txt", std::ios::app);
-                            f << "SENDING " << msg << endl;
-                            f.close();
-                            if (nextEdgeSocket->sendMessage(msg) == 1)
-                            {
-                                success = true;
-                                msg.clear();
-
-                                // Edge-SLAM: debug
-                                ofstream f;
-                                f.open("myLogs_Tracking.txt", std::ios::app);
-                                f << "SENT " << msg << endl;
-                                f.close();
-                                cout << "log,Tracking::tcp_send,sent " << name << endl;
-                            }
-                            else
-                            {
-                                ofstream f;
-                                f.open("myLogs_Tracking.txt", std::ios::app);
-                                f << "FAILED TO SEND " << msg << endl;
-                                f.close();
-                                success = false;
-                            }
-                            return;
-                        }
                         if (nextEdgeSocket->sendMessage(msg) == 1)
                         {
                             success = true;
