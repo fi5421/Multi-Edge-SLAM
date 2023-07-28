@@ -171,14 +171,17 @@ protected:
     std::thread* keyframe_thread ;
     std::thread* frame_thread ;
     std::thread* map_thread ;
+    std::thread* msg_thread ;
     // Edge-SLAM: queue declarations
     moodycamel::ConcurrentQueue<std::string> keyframe_queue;
     moodycamel::ConcurrentQueue<std::string> frame_queue;
     moodycamel::BlockingConcurrentQueue<std::string> map_queue;
+    moodycamel::ConcurrentQueue<std::string> msg_queue;
     // Edge-SLAM: TcpSocket Objects
     TcpSocket* keyframe_socket;
     TcpSocket* frame_socket;
     TcpSocket* map_socket;
+    TcpSocket* msg_socket;
 
     // Edge-SLAM: relocalization
     static vector<KeyFrame*> vpCandidateKFs;
