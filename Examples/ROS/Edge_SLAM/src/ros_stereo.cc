@@ -61,7 +61,7 @@ int main(int argc, char **argv)
     std::transform(RunType.begin(), RunType.end(), RunType.begin(), ::tolower);
     ros::init(argc, argv, RunType);
     ros::start();
-    if((argc != 5) || ((DoRect.compare("true") != 0) && (DoRect.compare("false") != 0)) || ((RunType.compare("client") != 0) && (RunType.compare("server") != 0)))
+    if((argc != 5) || ((DoRect.compare("true") != 0) && (DoRect.compare("false") != 0)) || ((RunType.compare("client") != 0) && (RunType.compare("server") != 0) && (RunType.compare("server2") != 0)))
     {
         cerr << endl << "Usage: rosrun Edge_SLAM Stereo VOC_PATH SETTINGS_PATH DO_RECTIFY(true|false) RUN_TYPE(client|server)" << endl;
         ros::shutdown();
@@ -90,18 +90,30 @@ int main(int argc, char **argv)
                 return -1;
             }
 
-            cv::Mat K_l, K_r, P_l, P_r, R_l, R_r, D_l, D_r;
-            fsSettings["LEFT.K"] >> K_l;
-            fsSettings["RIGHT.K"] >> K_r;
+            // cv::Mat K_l, K_r, P_l, P_r, R_l, R_r, D_l, D_r;
+            // fsSettings["LEFT.K"] >> K_l;
+            // fsSettings["RIGHT.K"] >> K_r;
 
-            fsSettings["LEFT.P"] >> P_l;
-            fsSettings["RIGHT.P"] >> P_r;
+            // fsSettings["LEFT.P"] >> P_l;
+            // fsSettings["RIGHT.P"] >> P_r;
 
-            fsSettings["LEFT.R"] >> R_l;
-            fsSettings["RIGHT.R"] >> R_r;
+            // fsSettings["LEFT.R"] >> R_l;
+            // fsSettings["RIGHT.R"] >> R_r;
 
-            fsSettings["LEFT.D"] >> D_l;
-            fsSettings["RIGHT.D"] >> D_r;
+            // fsSettings["LEFT.D"] >> D_l;
+            // fsSettings["RIGHT.D"] >> D_r;
+
+
+            cv::Mat K_l = (cv::Mat_<double>(3,3)<<458.654, 0.0, 367.215, 0.0, 457.296, 248.375, 0.0, 0.0, 1.0);
+            cv::Mat K_r = (cv::Mat_<double>(3,3)<<457.587, 0.0, 379.999, 0.0, 456.134, 255.238, 0.0, 0.0, 1);
+            cv::Mat P_l = (cv::Mat_<double>(3,4)<<435.2046959714599, 0, 367.4517211914062, 0,  0, 435.2046959714599, 252.2008514404297, 0,  0, 0, 1, 0);
+            cv::Mat P_r = (cv::Mat_<double>(3,4)<<435.2046959714599, 0, 367.4517211914062, -47.90639384423901, 0, 435.2046959714599, 252.2008514404297, 0, 0, 0, 1, 0);
+            cv::Mat R_l = (cv::Mat_<double>(3,3)<<0.999966347530033, -0.001422739138722922, 0.008079580483432283, 0.001365741834644127, 0.9999741760894847, 0.007055629199258132, -0.008089410156878961, -0.007044357138835809, 0.9999424675829176);
+            cv::Mat R_r = (cv::Mat_<double>(3,3)<<0.9999633526194376, -0.003625811871560086, 0.007755443660172947, 0.003680398547259526, 0.9999684752771629, -0.007035845251224894, -0.007729688520722713, 0.007064130529506649, 0.999945173484644);
+            cv::Mat D_l = (cv::Mat_<double>(1,5)<<-0.28340811, 0.07395907, 0.00019359, 1.76187114e-05, 0.0);
+            cv::Mat D_r = (cv::Mat_<double>(1,5)<<-0.28368365, 0.07451284, -0.00010473, -3.555907e-05, 0.0);
+
+
 
             int rows_l = fsSettings["LEFT.height"];
             int cols_l = fsSettings["LEFT.width"];
