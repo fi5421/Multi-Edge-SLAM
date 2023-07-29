@@ -69,6 +69,27 @@ namespace ORB_SLAM2
         cout << "Enter the device IP address: ";
         // getline(cin, ip);
         ip = "127.0.0.1";
+
+        // Subset Tcp Connection
+        cout << "Enter subset Port Number\n";
+        getline(cin, subset_port);
+        cout << "Subset Port " << std::stoi(subset_port) << endl;
+        if (edgeNumber == 1)
+        {
+            map_subset_socket = new TcpSocket(ip, std::stoi(subset_port));
+            map_subset_socket->waitForConnection();
+            subset_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_send, &map_subset_queue_send, map_subset_socket, "subset map");
+        }
+        else
+        {
+            map_subset_socket = new TcpSocket(ip, std::stoi(subset_port), ip, std::stoi(subset_port));
+
+            map_subset_socket->sendConnectionRequest();
+            subset_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &keyframe_queue, map_subset_socket, 1, "subset map");
+        }
+
+        // map_subset_queue_send.enqueue("Temp Message");
+
         // Keyframe connection
         cout << "Enter the port number used for keyframe connection: ";
         getline(cin, port_number);
@@ -97,19 +118,6 @@ namespace ORB_SLAM2
         mnLastKeyFrameId = 0;
 
         cout << "log,LocalMapping::LocalMapping,done" << endl;
-
-        cout << "Enter subset Port Number\n";
-        getline(cin, subset_port);
-        map_subset_socket = new TcpSocket(ip, std::stoi(subset_port));
-        map_subset_socket->waitForConnection();
-        if (edgeNumber == 1)
-        {
-            subset_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_send, &map_subset_queue_send, map_subset_socket, "subset map");
-        }
-        else
-        {
-            subset_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &keyframe_queue, map_subset_socket, 1, "subset map");
-        }
     }
 
     // Edge-SLAM
@@ -254,20 +262,38 @@ namespace ORB_SLAM2
                 if (keyframe_queue.try_dequeue(msg))
                 {
                     // If relocalization was successful and a new keyframe is received, then drop any remaining relocalization frames in queue
-                    if (msRelocStatus)
+                    if (msg.length() < 100)
                     {
-                        string data;
-                        if (frame_queue.try_dequeue(data))
-                        {
-                            data.clear();
-                        }
+                        cout << "Message received on KeyFrame Socket " << msg << endl;
+                        // if(msg=="Start Sync")
                     }
-                    // inserts into  mlNewKeyFrames
-                    keyframeCallback(msg);
+                    else
+                    {
+                        if (msRelocStatus)
+                        {
+                            string data;
+                            if (frame_queue.try_dequeue(data))
+                            {
+                                data.clear();
+                            }
+                        }
+                        // inserts into  mlNewKeyFrames
+                        keyframeCallback(msg);
+                    }
                 }
                 else if (frame_queue.try_dequeue(msg))
                 {
-                    frameCallback(msg);
+                    if (msg.length() < 100)
+                    {
+                        cout << "Message on Frame Socket " << msg << endl;
+                        if(msg=="Start Sync"){
+                            startSync();
+                        }
+                    }
+                    else
+                    {
+                        frameCallback(msg);
+                    }
                 }
             }
 
@@ -1535,7 +1561,8 @@ namespace ORB_SLAM2
         } while (1);
     }
 
-    void LocalMapping::startSync(){
+    void LocalMapping::startSync()
+    {
         cout << "Starting Sync" << endl;
 
         std::vector<std::string> KFsData;
@@ -1627,13 +1654,13 @@ namespace ORB_SLAM2
 
         cout << "log,LocalMapping::startSync,subset Sent";
 
-
         // Clear relocalization vectors
         // usCandidateKFsId.clear();
         // vpCandidateKFs.clear();
 
         // Set to false so no map update is sent until we receive a new keyframe
         // msNewKFFlag = false;
+        sync = 0;
     }
 
     // Edge-SLAM: receive function to be called on a separate thread
@@ -1652,27 +1679,35 @@ namespace ORB_SLAM2
 
             if (!msg.empty())
             {
-                if (name == "frame" && msg.length() < 100)
-                {
-                    if(msg=="Start Sync"){
-                        // LocalMapping::startSync()
-                        cout<<"Start Sync Message received\n";
-                    }
-                }
-                else
-                {
-                    if (messageQueue->size_approx() >= maxQueueSize)
-                    {
-                        string data;
-                        if (messageQueue->try_dequeue(data))
-                        {
-                            data.clear();
-                        }
-                    }
-                    messageQueue->enqueue(msg);
+                // if (msg.length() < 100)
+                // {
+                //     cout << "Message Received: " << msg << endl;
+                //     if (name == "frame")
+                //     {
+                //         if (msg == "Start Sync")
+                //         {
+                //             // thread sync_thread(&ORB_SLAM2::LocalMapping::startSync);
+                //             // LocalMapping::startSync();
+                //             sync=true;
+                //             cout << "Start Sync Message received\n";
+                //         }
+                //     }
+                // }
 
-                    cout << "log,LocalMapping::tcp_receive,received " << name << endl;
+                // else
+                // {
+                if (messageQueue->size_approx() >= maxQueueSize)
+                {
+                    string data;
+                    if (messageQueue->try_dequeue(data))
+                    {
+                        data.clear();
+                    }
                 }
+                messageQueue->enqueue(msg);
+
+                cout << "log,LocalMapping::tcp_receive,received " << name << endl;
+                // }
             }
         }
     }

@@ -91,7 +91,7 @@ public:
     void static tcp_receive(moodycamel::ConcurrentQueue<std::string>* messageQueue, TcpSocket* socketObject, unsigned int maxQueueSize, std::string name);
     void static tcp_send(moodycamel::BlockingConcurrentQueue<std::string>* messageQueue, TcpSocket* socketObject, std::string name);
 
-    void startSync()
+    void startSync();
 
 
 protected:
@@ -207,6 +207,7 @@ protected:
     static bool msRelocNewFFlag;    // Flag used to only send reloc map update when a new reloc frame is received
     const static int RELOC_FREQ;    // Set to: after how many ms from last reloc map, a new map should be sent
     void sendRelocMapUpdate();
+    bool sync=0;
 };
 
 } //namespace ORB_SLAM

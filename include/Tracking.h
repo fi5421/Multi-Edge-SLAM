@@ -275,8 +275,8 @@ protected:
     int sync_mode=0;
 
 
-    int sync_start=1300;
-    int switch_frame=1456;
+    int sync_start=900;
+    int switch_frame=1000;
 
 
 };

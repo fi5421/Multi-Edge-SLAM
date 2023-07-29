@@ -972,10 +972,12 @@ namespace ORB_SLAM2
 
             if(mCurrentFrame.mnId>sync_start && sync_mode!=1 && mCurrentFrame.mnId<switch_frame){
                 frame_queue.enqueue("Start Sync");
+                sync_mode=1;
             }
 
-            if(mCurrrentFrame.mnId>switch_frame && sync_mode!=0){
-                egdeNumber=2;
+            if(mCurrentFrame.mnId>switch_frame && sync_mode!=0){
+                // edgeNumber=2;
+                sync_mode=0;
             }
 
 
