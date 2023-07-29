@@ -46,12 +46,13 @@ namespace ORB_SLAM2
     const int LocalMapping::RELOC_FREQ = 5000;
 
     // Edge-SLAM: added settings file path variable
-    LocalMapping::LocalMapping(Map *pMap, KeyFrameDatabase *pKFDB, ORBVocabulary *pVoc, const string &strSettingPath, const float bMonocular) : mbMonocular(bMonocular), mbResetRequested(false), mbFinishRequested(false), mbFinished(true), mpORBVocabulary(pVoc), mpMap(pMap), mpKeyFrameDB(pKFDB),
-                                                                                                                                                mbAbortBA(false), mbStopped(false), mbStopRequested(false), mbNotStop(false), mbAcceptKeyFrames(true)
+    LocalMapping::LocalMapping(Map *pMap, KeyFrameDatabase *pKFDB, ORBVocabulary *pVoc, const string &strSettingPath, const float bMonocular, int edgeNumber) : mbMonocular(bMonocular), mbResetRequested(false), mbFinishRequested(false), mbFinished(true), mpORBVocabulary(pVoc), mpMap(pMap), mpKeyFrameDB(pKFDB),
+                                                                                                                                                                mbAbortBA(false), mbStopped(false), mbStopRequested(false), mbNotStop(false), mbAcceptKeyFrames(true)
     {
         // Edge-SLAM: everything in this scope is new
 
         // Load camera parameters from settings file
+        cout << "Edge Number " << edgeNumber << endl;
         cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
         float fps = fSettings["Camera.fps"];
         if (fps == 0)
@@ -63,39 +64,52 @@ namespace ORB_SLAM2
         // Setting up connections
         string ip;
         string port_number;
-        string dummy;
+        int port_int;
+        string subset_port;
         cout << "Enter the device IP address: ";
-        getline(cin, ip);
+        // getline(cin, ip);
+        ip = "127.0.0.1";
         // Keyframe connection
         cout << "Enter the port number used for keyframe connection: ";
         getline(cin, port_number);
+        port_int = std::stoi(port_number);
+
         keyframe_socket = new TcpSocket(ip, std::stoi(port_number));
         keyframe_socket->waitForConnection();
         keyframe_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &keyframe_queue, keyframe_socket, 2, "keyframe");
         // Frame connection
-        cout << "Enter the port number used for frame connection: " << std::stoi(port_number) + 2;
-        getline(cin, dummy);
-        frame_socket = new TcpSocket(ip, std::stoi(port_number) + 2);
+        // cout << "Enter the port number used for frame connection: ";
+        // getline(cin, port_number);
+        port_int += 2;
+        cout << "Port number for Frame Connection: " << port_int << endl;
+        frame_socket = new TcpSocket(ip, port_int);
         frame_socket->waitForConnection();
         frame_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &frame_queue, frame_socket, 1, "frame");
         // Map connection
-        cout << "Enter the port number used for map connection: " << std::stoi(port_number) + 4;
-        getline(cin, dummy);
-        map_socket = new TcpSocket(ip, std::stoi(port_number) + 4);
+        // cout << "Enter the port number used for map connection: ";
+        // getline(cin, port_number);
+        port_int += 2;
+        cout << "Port Number for map connection " << port_int << endl;
+        map_socket = new TcpSocket(ip, port_int);
         map_socket->waitForConnection();
         map_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_send, &map_queue, map_socket, "map");
-        // Message connection
-        cout << "Enter the port number used for message connection: " << std::stoi(port_number) + 6;
-        getline(cin, dummy);
-        msg_socket = new TcpSocket(ip, std::stoi(port_number) + 6);
-        msg_socket->waitForConnection();
-        msg_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &msg_queue, msg_socket, 1, "message");
 
         mnLastKeyFrameId = 0;
 
-        slamMode = "NORMAL";
-
         cout << "log,LocalMapping::LocalMapping,done" << endl;
+
+        cout << "Enter subset Port Number\n";
+        getline(cin, subset_port);
+        map_subset_socket = new TcpSocket(ip, std::stoi(subset_port));
+        map_subset_socket->waitForConnection();
+        if (edgeNumber == 1)
+        {
+            subset_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_send, &map_subset_queue_send, map_subset_socket, "subset map");
+        }
+        else
+        {
+            subset_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &keyframe_queue, map_subset_socket, 1, "subset map");
+        }
     }
 
     // Edge-SLAM
@@ -114,11 +128,13 @@ namespace ORB_SLAM2
             return;
 
         KeyFrame *tKF = new KeyFrame();
+
+        // Making the Key Frame object
         try
         {
-            std::stringstream iis(msg);
-            boost::archive::text_iarchive iia(iis);
-            iia >> tKF;
+            std::stringstream iis(msg);             // declaring msg as a stream
+            boost::archive::text_iarchive iia(iis); // used for serializing
+            iia >> tKF;                             // making a key frame object from the serialized boost object
         }
         catch (boost::archive::archive_exception e)
         {
@@ -144,29 +160,6 @@ namespace ORB_SLAM2
 
         // Check keyframe after receiving it from the client
         // If first received keyframe then insert without additional checking
-        cout << slamMode << endl;
-        // if ((tKF->mnId > 1) && (mpMap->KeyFramesInMap() < 1)) {
-        //     if (slamMode == "NORMAL")
-        //     {
-        //         ofstream f;
-        //         f.open("myLogs_LocalMapping.txt", std::ios::app);
-        //         f << "-------------HAVE BEEN TOLD TO PRE-SYNCHRONIZE at time " << std::fixed << setprecision(6) <<  tKF->mTimeStamp << "-------------" << endl;
-        //         f.close();
-        //         slamMode = "S-START";
-        //     }            
-        // }
-
-        // if ((tKF->mnId > 1333)) {
-        //     if (slamMode == "S-START")
-        //     {
-        //         ofstream f;
-        //         f.open("myLogs_LocalMapping.txt", std::ios::app);
-        //         f << "-------------HAVE BEEN TOLD TO HANDOVER at time " << std::fixed << setprecision(6) <<  tKF->mTimeStamp << "-------------" << endl;
-        //         f.close();
-        //         slamMode = "H-START";
-        //     }
-        // }
-
         if ((tKF->mnId < 1) || (mpMap->KeyFramesInMap() < 1))
         {
             tKF->ChangeParent(NULL);
@@ -269,6 +262,7 @@ namespace ORB_SLAM2
                             data.clear();
                         }
                     }
+                    // inserts into  mlNewKeyFrames
                     keyframeCallback(msg);
                 }
                 else if (frame_queue.try_dequeue(msg))
@@ -289,10 +283,8 @@ namespace ORB_SLAM2
                 // Edge-SLAM: check if new keyframe is received
                 {
                     string msg;
-                    if (keyframe_queue.try_dequeue(msg)) {
-                            keyframeCallback(msg);
-                        }
-                    } 
+                    if (keyframe_queue.try_dequeue(msg))
+                        keyframeCallback(msg);
                 }
 
                 // Check recent MapPoints
@@ -355,10 +347,7 @@ namespace ORB_SLAM2
                 // Send regular local map update
                 else if ((dCount > MAP_FREQ) && (mpMap->KeyFramesInMap() > 0) && (msNewKFFlag) && (!CheckReset()))
                 {
-                    if (slamMode != "S-START")
-                    {
-                        sendLocalMapUpdate();
-                    }
+                    sendLocalMapUpdate();
                 }
             }
 
@@ -1562,6 +1551,9 @@ namespace ORB_SLAM2
 
             if (!msg.empty())
             {
+                if(name=="frame"){
+                    cout<<"Relocalization frame length "<<msg.length()<<endl;
+                }
                 if (messageQueue->size_approx() >= maxQueueSize)
                 {
                     string data;
@@ -1570,24 +1562,6 @@ namespace ORB_SLAM2
                         data.clear();
                     }
                 }
-                
-                // if (name == "message") {
-                //     if (msg == "HANDOVER") {
-                //         slamMode = "H-START";
-                //         ofstream f;
-                //         f.open("myLogs_LocalMapping.txt", std::ios::app);
-                //         f << "-------------HAVE BEEN TOLD TO PRE-SYNCHRONIZE" << "-------------" << endl;
-                //         f.close();
-                //     } else if (msg == "PRE-SYNC") {
-                //         slamMode = "S-START";
-                //         ofstream f;
-                //         f.open("myLogs_LocalMapping.txt", std::ios::app);
-                //         f << "-------------HAVE BEEN TOLD TO HANDOVER" << "-------------" << endl;
-                //         f.close();
-                //     } else {
-                //         continue;
-                //     }
-                // }
                 messageQueue->enqueue(msg);
 
                 cout << "log,LocalMapping::tcp_receive,received " << name << endl;
