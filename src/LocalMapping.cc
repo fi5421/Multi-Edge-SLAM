@@ -71,13 +71,13 @@ namespace ORB_SLAM2
         getline(cin, port_number);
         keyframe_socket = new TcpSocket(ip, std::stoi(port_number));
         keyframe_socket->waitForConnection();
-        keyframe_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &keyframe_queue, keyframe_socket, 2, "keyframe");
+        keyframe_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &keyframe_queue, keyframe_socket, 2, "keyframe", slamMode);
         // Frame connection
         cout << "Enter the port number used for frame connection: " << std::stoi(port_number) + 2;
         getline(cin, dummy);
         frame_socket = new TcpSocket(ip, std::stoi(port_number) + 2);
         frame_socket->waitForConnection();
-        frame_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &frame_queue, frame_socket, 1, "frame");
+        frame_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &frame_queue, frame_socket, 1, "frame", slamMode);
         // Map connection
         cout << "Enter the port number used for map connection: " << std::stoi(port_number) + 4;
         getline(cin, dummy);
@@ -89,7 +89,7 @@ namespace ORB_SLAM2
         getline(cin, dummy);
         msg_socket = new TcpSocket(ip, std::stoi(port_number) + 6);
         msg_socket->waitForConnection();
-        msg_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &msg_queue, msg_socket, 1, "message");
+        msg_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &msg_queue, msg_socket, 1, "message", slamMode);
 
         mnLastKeyFrameId = 0;
 
@@ -290,22 +290,7 @@ namespace ORB_SLAM2
                 {
                     string msg;
                     if (keyframe_queue.try_dequeue(msg)) {
-                        if (msg == "HANDOVER")
-                        {
-                            slamMode = "H-START";
-                            ofstream f;
-                            f.open("myLogs_LocalMapping.txt", std::ios::app);
-                            f << "-------------HAVE BEEN TOLD TO PRE-SYNCHRONIZE" << "-------------" << endl;
-                            f.close();
-                        } else if (msg == "PRE-SYNC") {
-                            slamMode = "S-START";
-                            ofstream f;
-                            f.open("myLogs_LocalMapping.txt", std::ios::app);
-                            f << "-------------HAVE BEEN TOLD TO HANDOVER" << "-------------" << endl;
-                            f.close();
-                        } else {
                             keyframeCallback(msg);
-                        }
                     } 
                 }
 
@@ -1561,7 +1546,7 @@ namespace ORB_SLAM2
     }
 
     // Edge-SLAM: receive function to be called on a separate thread
-    void LocalMapping::tcp_receive(moodycamel::ConcurrentQueue<std::string> *messageQueue, TcpSocket *socketObject, unsigned int maxQueueSize, std::string name)
+    void LocalMapping::tcp_receive(moodycamel::ConcurrentQueue<std::string> *messageQueue, TcpSocket *socketObject, unsigned int maxQueueSize, std::string name, std::string& slamMode)
     {
         // Here the while(1) won't cause busy waiting as the implementation of receive function is blocking.
         while (1)
@@ -1584,6 +1569,26 @@ namespace ORB_SLAM2
                         data.clear();
                     }
                 }
+
+                if (name == "message") {
+                    if (msg == "HANDOVER")
+                    {
+                        slamMode = "H-START";
+                        ofstream f;
+                        f.open("myLogs_LocalMapping.txt", std::ios::app);
+                        f << "-------------HAVE BEEN TOLD TO PRE-SYNCHRONIZE" << "-------------" << endl;
+                        f.close();
+                    } else if (msg == "PRE-SYNC") {
+                        slamMode = "S-START";
+                        ofstream f;
+                        f.open("myLogs_LocalMapping.txt", std::ios::app);
+                        f << "-------------HAVE BEEN TOLD TO HANDOVER" << "-------------" << endl;
+                        f.close();
+                    } else {
+                        continue;
+                    }
+                }
+
                 messageQueue->enqueue(msg);
 
                 cout << "log,LocalMapping::tcp_receive,received " << name << endl;
