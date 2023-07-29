@@ -270,6 +270,14 @@ protected:
 
     // Choosing edge to communicate
     int edgeNumber;
+    // 0 normal
+    // 1 sync
+    int sync_mode=0;
+
+
+    int sync_start=1300;
+    int switch_frame=1456;
+
 
 };
 

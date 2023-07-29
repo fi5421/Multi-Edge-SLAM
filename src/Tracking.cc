@@ -962,13 +962,23 @@ namespace ORB_SLAM2
 
             // Edge-SLAM: debug
             cout << "log,Tracking::Track,end process frame " << mCurrentFrame.mnId << endl;
-            if ((mCurrentFrame.mnId > 1250) && (edgeNumber!=2)) {
-                ofstream f;
-                f.open("SwitchTime.txt");
-                f << "-------------SWITCHING EDGES at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
-                f.close();
-                edgeNumber = 2; 
+            // if ((mCurrentFrame.mnId > 1250) && (edgeNumber!=2)) {
+            //     ofstream f;
+            //     f.open("SwitchTime.txt");
+            //     f << "-------------SWITCHING EDGES at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
+            //     f.close();
+            //     edgeNumber = 2; 
+            // }
+
+            if(mCurrentFrame.mnId>sync_start && sync_mode!=1 && mCurrentFrame.mnId<switch_frame){
+                frame_queue.enqueue("Start Sync");
             }
+
+            if(mCurrrentFrame.mnId>switch_frame && sync_mode!=0){
+                egdeNumber=2;
+            }
+
+
             cout << "Number of frames in MAP:" << mpMap->KeyFramesInMap() << endl;
         }
     }

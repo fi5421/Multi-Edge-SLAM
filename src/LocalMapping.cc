@@ -1535,6 +1535,107 @@ namespace ORB_SLAM2
         } while (1);
     }
 
+    void LocalMapping::startSync(){
+        cout << "Starting Sync" << endl;
+
+        std::vector<std::string> KFsData;
+
+        // If map size is less than localMapSize, send the whole map, else send the lastest of size localMapSize
+        long unsigned localMapSize = Subset_Map_Size;
+        if (mpMap->KeyFramesInMap() <= localMapSize)
+        {
+            // Get all keyframes
+            vector<KeyFrame *> current_local_map = mpMap->GetAllKeyFrames();
+
+            cout << "log,LocalMapping::startSync,keyframes in local map update: ";
+
+            // Iterate through all keyframes in map
+            for (vector<KeyFrame *>::iterator mit = current_local_map.begin(); mit != current_local_map.end(); mit++)
+            {
+                KeyFrame *tKF = *mit;
+
+                std::ostringstream os;
+                boost::archive::text_oarchive oa(os);
+                oa << tKF;
+                KFsData.push_back(os.str());
+                os.clear();
+
+                cout << tKF->mnId << " ";
+            }
+
+            cout << endl;
+        }
+        else
+        {
+            cout << "log,LocalMapping::startSync,keyframes in local map update: ";
+
+            // Temporary stack to hold popped KF ids
+            stack<long unsigned int> msLocalKFsId;
+
+            // Pop from stack until localMapSize is reached
+            long unsigned count = 0;
+            while ((count < localMapSize) && (msLatestKFsId.size() > 0))
+            {
+                KeyFrame *tKF = mpMap->RetrieveKeyFrame(msLatestKFsId.top());
+                msLocalKFsId.push(msLatestKFsId.top());
+                msLatestKFsId.pop();
+
+                if (tKF)
+                {
+                    std::ostringstream os;
+                    boost::archive::text_oarchive oa(os);
+                    oa << tKF;
+                    KFsData.push_back(os.str());
+                    os.clear();
+
+                    cout << tKF->mnId << " ";
+
+                    count++;
+                }
+            }
+
+            // Clear Latest KF ids stack
+            while (!msLatestKFsId.empty())
+                msLatestKFsId.pop();
+
+            // Return last latest KF ids from temporary stack to original stack
+            while (!msLocalKFsId.empty())
+            {
+                msLatestKFsId.push(msLocalKFsId.top());
+                msLocalKFsId.pop();
+            }
+
+            cout << endl;
+        }
+
+        if (KFsData.size() > 0)
+        {
+            std::ostringstream os;
+            boost::archive::text_oarchive oa(os);
+            oa << KFsData;
+            std::string msg;
+            msg = os.str();
+            os.clear();
+
+            map_subset_queue_send.enqueue(msg);
+
+            // msLastMUStart = std::chrono::high_resolution_clock::now();
+        }
+
+        // Clear
+        KFsData.clear();
+
+        cout << "log,LocalMapping::startSync,subset Sent";
+
+
+        // Clear relocalization vectors
+        // usCandidateKFsId.clear();
+        // vpCandidateKFs.clear();
+
+        // Set to false so no map update is sent until we receive a new keyframe
+        // msNewKFFlag = false;
+    }
+
     // Edge-SLAM: receive function to be called on a separate thread
     void LocalMapping::tcp_receive(moodycamel::ConcurrentQueue<std::string> *messageQueue, TcpSocket *socketObject, unsigned int maxQueueSize, std::string name)
     {
@@ -1551,20 +1652,27 @@ namespace ORB_SLAM2
 
             if (!msg.empty())
             {
-                if(name=="frame"){
-                    cout<<"Relocalization frame length "<<msg.length()<<endl;
-                }
-                if (messageQueue->size_approx() >= maxQueueSize)
+                if (name == "frame" && msg.length() < 100)
                 {
-                    string data;
-                    if (messageQueue->try_dequeue(data))
-                    {
-                        data.clear();
+                    if(msg=="Start Sync"){
+                        // LocalMapping::startSync()
+                        cout<<"Start Sync Message received\n";
                     }
                 }
-                messageQueue->enqueue(msg);
+                else
+                {
+                    if (messageQueue->size_approx() >= maxQueueSize)
+                    {
+                        string data;
+                        if (messageQueue->try_dequeue(data))
+                        {
+                            data.clear();
+                        }
+                    }
+                    messageQueue->enqueue(msg);
 
-                cout << "log,LocalMapping::tcp_receive,received " << name << endl;
+                    cout << "log,LocalMapping::tcp_receive,received " << name << endl;
+                }
             }
         }
     }

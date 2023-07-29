@@ -72,6 +72,8 @@ public:
     void SetAcceptKeyFrames(bool flag);
     bool SetNotStop(bool flag);
 
+    
+
     void InterruptBA();
 
     void RequestFinish();
@@ -89,6 +91,9 @@ public:
     void static tcp_receive(moodycamel::ConcurrentQueue<std::string>* messageQueue, TcpSocket* socketObject, unsigned int maxQueueSize, std::string name);
     void static tcp_send(moodycamel::BlockingConcurrentQueue<std::string>* messageQueue, TcpSocket* socketObject, std::string name);
 
+    void startSync()
+
+
 protected:
     // Edge-SLAM: measure
     static std::chrono::high_resolution_clock::time_point msLastMUStart;
@@ -104,6 +109,8 @@ protected:
     const static int CONN_KF;   // Set to: for every keyframe, how many connected keyframes should be included in a map update
     static bool msNewKFFlag;    // Flag used to only send map update when a new keyframe is received
     static stack<long unsigned int> msLatestKFsId;  // Stack to keep latest keyframes ids
+
+    int Subset_Map_Size=6;
 
     // Edge-SLAM
     //New KeyFrame rules (according to fps)
