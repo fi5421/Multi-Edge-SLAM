@@ -998,6 +998,7 @@ namespace ORB_SLAM2
                     f.close();
                     edgeNumber = 2; 
                     msg_queue.enqueue("HANDOVER");
+                    msg_queue.enqueue("TERMINATE");
                     slamMode = "H-START";
                 }
             }
@@ -2355,6 +2356,32 @@ namespace ORB_SLAM2
 
                 if (success)
                     messageQueue->wait_dequeue(msg);
+                
+                if (msg == "TERMINATE") {
+                    if (!socketObject->checkAlive())
+                    {
+                        // Edge-SLAM: debug
+                        cout << "log,Tracking::tcp_send,terminating thread" << endl;
+                        break;
+                    }
+
+                    if ((!msg.empty()) && (msg.compare("exit") != 0))
+                    {
+                        if (socketObject->sendMessage(msg) == 1)
+                        {
+                            success = true;
+                            msg.clear();
+
+                            // Edge-SLAM: debug
+                            cout << "log,Tracking::tcp_send,sent " << name << endl;
+                        }
+                        else
+                        {
+                            success = false;
+                        }
+                    }
+                    continue;
+                }
 
                 if ((!msg.empty()) && (msg.compare("exit") != 0))
                 {

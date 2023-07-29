@@ -357,6 +357,10 @@ namespace ORB_SLAM2
                 {
                     if (slamMode != "S-START")
                     {
+                        ofstream f;
+                        f.open("myLogs_LocalMapping.txt", std::ios::app);
+                        f << "-------------SENDING LOCAL MAP" << "-------------" << endl;
+                        f.close();
                         sendLocalMapUpdate();
                     }
                 }
@@ -1577,14 +1581,20 @@ namespace ORB_SLAM2
                         *slamModePointer = "H-START";
                         ofstream f;
                         f.open("myLogs_LocalMapping.txt", std::ios::app);
-                        f << "-------------HAVE BEEN TOLD TO PRE-SYNCHRONIZE" << "-------------" << endl;
+                        f << "-------------(edge 2) HAVE BEEN TOLD TO HANDOVER" << "-------------" << endl;
                         f.close();
                     } else if (msg == "PRE-SYNC") {
                         *slamModePointer = "S-START";
                         ofstream f;
                         f.open("myLogs_LocalMapping.txt", std::ios::app);
-                        f << "-------------HAVE BEEN TOLD TO HANDOVER" << "-------------" << endl;
+                        f << "-------------(edge 2) HAVE BEEN TOLD TO PRE-SYNC" << "-------------" << endl;
                         f.close();
+                    } else if (msg == "TERMINATE") {
+                        *slamModePointer = "S-START";
+                        ofstream f;
+                        f.open("myLogs_LocalMapping.txt", std::ios::app);
+                        f << "-------------(first edge) HAVE BEEN TOLD TO TERMINATE" << "-------------" << endl;
+                        f.close(); 
                     } else {
                         continue;
                     }
