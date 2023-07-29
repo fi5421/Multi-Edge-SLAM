@@ -86,7 +86,7 @@ public:
     void Reset();
 
     // Edge-SLAM: TCP
-    static void tcp_receive(moodycamel::ConcurrentQueue<std::__cxx11::basic_string<char>>* map_queue, TcpSocket* clientSocket, unsigned int msg_id, std::string name, std::string& slamMode);
+    void static tcp_receive(moodycamel::ConcurrentQueue<std::string>* messageQueue, TcpSocket* socketObject, unsigned int maxQueueSize, std::string name, string* slamModePointer);
     void static tcp_send(moodycamel::BlockingConcurrentQueue<std::string>* messageQueue, TcpSocket* socketObject, std::string name);
 
 protected:
