@@ -981,10 +981,10 @@ namespace ORB_SLAM2
             cout << "log,Tracking::Track,end process frame " << mCurrentFrame.mnId << endl;
             if (mCurrentFrame.mnId > 666) {
                 if (slamMode == "NORMAL") {
-                    ofstream f;
-                    f.open("myLogs_Tracking.txt", std::ios::app);
-                    f << "-------------START PRE-SYNCHRONIZATION at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
-                    f.close();
+                    // ofstream f;
+                    // f.open("myLogs_Tracking.txt", std::ios::app);
+                    // f << "-------------START PRE-SYNCHRONIZATION at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
+                    // f.close();
                     msg_queue.enqueue("PRE-SYNC");
                     slamMode = "S-START";
                 }
@@ -992,10 +992,10 @@ namespace ORB_SLAM2
             
             if (mCurrentFrame.mnId > 1333) {
                 if (slamMode == "S-START") {
-                    ofstream f;
-                    f.open("myLogs_Tracking.txt", std::ios::app);
-                    f << "-------------HANDOVER FROM ONE EDGE TO ANOTHER at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
-                    f.close();
+                    // ofstream f;
+                    // f.open("myLogs_Tracking.txt", std::ios::app);
+                    // f << "-------------HANDOVER FROM ONE EDGE TO ANOTHER at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
+                    // f.close();
                     edgeNumber = 2; 
                     msg_queue.enqueue("HANDOVER");
                     msg_queue.enqueue("TERMINATE");
@@ -2341,10 +2341,10 @@ namespace ORB_SLAM2
         // This is not a busy wait because wait_dequeue function is blocking
         do
         {
-            ofstream f;
-            f.open("myLogs_Tracking.txt", std::ios::app);
-            f << "thread = " << name << endl;
-            f.close();
+            // ofstream f;
+            // f.open("myLogs_Tracking.txt", std::ios::app);
+            // f << "thread = " << name << endl;
+            // f.close();
             if (name == "message")
             {
                 if (!nextEdgeSocket->checkAlive())
