@@ -94,6 +94,7 @@ public:
     void static tcp_send(moodycamel::BlockingConcurrentQueue<std::string>* messageQueue, TcpSocket* socketObject, std::string name);
 
     void startSync();
+    void ProcessSubset(std::string msg);
 
     bool sync=false;
     bool activeEdge=false;

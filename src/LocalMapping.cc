@@ -280,6 +280,41 @@ namespace ORB_SLAM2
             mpViewer->Release();*/
     }
 
+    void LocalMapping::ProcessSubset(std::string msg){
+        vector<std::string> mapVec;
+         try
+        {
+            std::stringstream is(msg);
+            boost::archive::text_iarchive ia(is);
+            ia >> mapVec;
+            is.clear();
+        }
+        catch (boost::archive::archive_exception e)
+        {
+            cout << "log,LocalMapping::ProcessSubset,map error: " << e.what() << endl;
+            return;
+        }
+
+        for (int i =0;i<(int)mapVec.size();i++){
+            KeyFrame *tKF = new KeyFrame();
+            {
+                try{
+                     std::stringstream iis(mapVec[i]);
+                    boost::archive::text_iarchive iia(iis);
+                    iia >> tKF;
+                    iis.clear();
+                }catch (boost::archive::archive_exception e)
+                {
+                    cout<<"log, LocalMapping::ProcessSubset, KF error"<<e.what()<<endl;
+                    return;
+                }
+
+            }
+
+            tKF->setORBVocab
+        }
+    }
+
     void LocalMapping::Run()
     {
         mbFinished = false;
@@ -310,6 +345,9 @@ namespace ORB_SLAM2
                     }
                     else
                     {
+                        if(sync){
+
+                        }
                         if (msRelocStatus)
                         {
                             string data;
