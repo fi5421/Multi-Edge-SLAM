@@ -23,6 +23,8 @@
 #include "ORBmatcher.h"
 #include "Optimizer.h"
 
+#include "vector"
+
 #include <mutex>
 
 class my_exception : public std::runtime_error
@@ -311,8 +313,180 @@ namespace ORB_SLAM2
 
             }
 
-            tKF->setORBVocab
+            tKF->setORBVocab(mpORBVocabulary);
+            tKF->setMapPointer(mpMap);
+            tKF->setKeyFrameDatabase(mpKeyFrameDB);
+            tKF->ComputeBoW();
+
+            vector<MapPoint *> vpMapPointMatches = tKF->GetMapPointMatches();
+
+             for (size_t i = 0; i < vpMapPointMatches.size(); i++)
+            {
+                MapPoint *pMP = vpMapPointMatches[i];
+                if (pMP)
+                {
+                    if (!pMP->isBad())
+                    {
+                        // If tracking id is set
+                        if (pMP->trSet)
+                        {
+                            MapPoint *pMPMap = mpMap->RetrieveMapPoint(pMP->mnId, true);
+
+                            if (pMPMap != NULL)
+                            {
+                                // Replace keyframe's mappoint pointer to the existing one in tracking local-map
+                                tKF->AddMapPoint(pMPMap, i);
+
+                                // Add keyframe observation to the mappoint
+                                pMPMap->AddObservation(tKF, i);
+
+                                // Delete duplicate mappoint
+                                delete pMP;
+                            }
+                            else
+                            {
+                                // Add keyframe's mappoint to tracking local-map
+                                mpMap->AddMapPoint(pMP);
+
+                                // Add keyframe observation to the mappoint
+                                pMP->AddObservation(tKF, i);
+                                pMP->setMapPointer(mpMap); // We are not sending the map pointer in marshalling
+                                pMP->SetReferenceKeyFrame(tKF);
+                            }
+                        }
+                        else if (pMP->lmSet) // If tracking id is not set, but local-mapping id is set
+                        {
+                            MapPoint *pMPMap = mpMap->RetrieveMapPoint(pMP->lmMnId, false);
+
+                            if (pMPMap != NULL)
+                            {
+                                // Replace keyframe's mappoint pointer to the existing one in tracking local-map
+                                tKF->AddMapPoint(pMPMap, i);
+
+                                // Add keyframe observation to the mappoint
+                                pMPMap->AddObservation(tKF, i);
+
+                                // Delete duplicate mappoint
+                                delete pMP;
+                            }
+                            else
+                            {
+                                // Assign tracking id
+                                pMP->AssignId(true);
+
+                                // Add keyframe's mappoint to tracking local-map
+                                mpMap->AddMapPoint(pMP);
+
+                                // Add keyframe observation to the mappoint
+                                pMP->AddObservation(tKF, i);
+                                pMP->setMapPointer(mpMap); // We are not sending the map pointer in marshalling
+                                pMP->SetReferenceKeyFrame(tKF);
+                            }
+                        }
+                    }
+                }
+            }
+
+            mpMap->AddKeyFrame(tKF);
+
+            mpKeyFrameDB->add(tKF);
+
+            tKF=static_cast<KeyFrame *>(NULL);
+            vpMapPointMatches.clear();
+       }
+
+         vector<KeyFrame *> vpKeyFrames = mpMap->GetAllKeyFrames();
+
+        // Initialize Reference KeyFrame and other KF variables
+        if (vpKeyFrames.size() > 0)
+        {
+            if (!refKFSet)
+                mpReferenceKF = vpKeyFrames[0];
+            else
+            {
+                if (mpReferenceKF->mnId < vpKeyFrames[0]->mnId)
+                {
+                    mpReferenceKF = vpKeyFrames[0];
+                    refKFSet = false;
+                }
+            }
+
+            mnLastKeyFrameId = vpKeyFrames[0]->mnFrameId;
+            mpLastKeyFrame = vpKeyFrames[0];
+            mnMapUpdateLastKFId = vpKeyFrames[0]->mnId;
         }
+
+        for (std::vector<KeyFrame *>::iterator it = vpKeyFrames.begin(); it != vpKeyFrames.end(); ++it)
+        {
+            KeyFrame *pKFCon = *it;
+
+            pKFCon->ReconstructConnections();
+
+            // Edge-SLAM: debug
+            cout << pKFCon->mnId << " ";
+
+            // If RefKF has lower id than current KF, then set it to that KF
+            if (mpReferenceKF->mnId < pKFCon->mnId)
+            {
+                mpReferenceKF = pKFCon;
+                refKFSet = false;
+            }
+
+            // Update other KF variables
+            if (mnMapUpdateLastKFId < pKFCon->mnId)
+            {
+                mnLastKeyFrameId = pKFCon->mnFrameId;
+                mpLastKeyFrame = pKFCon;
+                mnMapUpdateLastKFId = pKFCon->mnId;
+            }
+        }
+
+         mCurrentFrame.mpReferenceKF = mpReferenceKF;
+
+        // Get all map points in tracking local-map
+        vector<MapPoint *> vpMapPoints = mpMap->GetAllMapPoints();
+
+          for (std::vector<MapPoint *>::iterator it = vpMapPoints.begin(); it != vpMapPoints.end(); ++it)
+        {
+            MapPoint *rMP = *it;
+
+            if ((unsigned)rMP->mnFirstKFid == rMP->GetReferenceKeyFrame()->mnId)
+                continue;
+
+            KeyFrame *rKF = mpMap->RetrieveKeyFrame(rMP->mnFirstKFid);
+
+            if (rKF)
+                rMP->SetReferenceKeyFrame(rKF);
+        }
+
+         for (int i = 0; i < mLastFrame.N; i++)
+        {
+            if (lastFrame_points_availability[i])
+            {
+                MapPoint *newpMP = mpMap->RetrieveMapPoint(lastFrame_points_ids[i], true);
+
+                if (newpMP)
+                {
+                    mLastFrame.mvpMapPoints[i] = newpMP;
+                }
+                else
+                {
+                    mLastFrame.mvpMapPoints[i] = static_cast<MapPoint *>(NULL);
+                }
+            }
+        }
+
+        // We should update mvpLocalMapPoints for viewer
+        mvpLocalMapPoints.clear();
+        for (unsigned int i = 0; i < mvpLocalMapPoints_ids.size(); i++)
+        {
+            MapPoint *pMP = mpMap->RetrieveMapPoint(mvpLocalMapPoints_ids[i], true);
+            if (pMP)
+            {
+                mvpLocalMapPoints.push_back(pMP);
+            }
+        }
+
     }
 
     void LocalMapping::Run()
@@ -334,7 +508,7 @@ namespace ORB_SLAM2
                         {
                             sync = true;
                         }
-                        else if (msg == "End sync" && edgeNumber == 2)
+                        else if (msg == "End Sync" && edgeNumber == 2)
                         {
                             sync = false;
                         }
@@ -346,7 +520,7 @@ namespace ORB_SLAM2
                     else
                     {
                         if(sync){
-
+                            ProcessSubset(msg);
                         }
                         if (msRelocStatus)
                         {
@@ -1852,12 +2026,25 @@ void LocalMapping::startSync()
         cout << endl;
     }
 
+    std::vector<std::string> subVec;
+
     while (!KF_stack.empty())
     {
-        map_subset_queue_send.enqueue(KF_stack.top());
+        // map_subset_queue_send.enqueue(KF_stack.top());
+        subVec.push_back(KF_stack.top());
         KF_stack.pop();
     }
 
+
+    std::ostringstream os;
+    boost::archive::text_oarchive oa(os);
+    oa << subVec;
+    std::string msg;
+    std::string msg_to_send = os.str();
+    os.clear();
+
+    map_subset_queue_send(msg_to_send);
+    map_subset_queue_send("End Sync");
     // if (KFsData.size() > 0)
     // {
     //     std::ostringstream os;
@@ -1874,6 +2061,7 @@ void LocalMapping::startSync()
 
     // Clear
     KFsData.clear();
+    subVec.clear();
 
     cout << "log,LocalMapping::startSync,subset Sent\n";
 
