@@ -378,7 +378,7 @@ MapPoint* KeyFrame::GetMapPoint(const size_t &idx)
     return mvpMapPoints[idx];
 }
 
-void KeyFrame::UpdateConnections()
+void KeyFrame::UpdateConnections(bool debug)
 {
     map<KeyFrame*,int> KFcounter;
 
@@ -387,6 +387,10 @@ void KeyFrame::UpdateConnections()
     {
         unique_lock<mutex> lockMPs(mMutexFeatures);
         vpMP = mvpMapPoints;
+    }
+
+    if(debug){
+        cout<<"KeyFrame::UpdateConnections, 1\n";
     }
 
     //For all map points in keyframe check in which other keyframes are they seen
@@ -410,10 +414,17 @@ void KeyFrame::UpdateConnections()
             KFcounter[mit->first]++;
         }
     }
+    if(debug){
+        cout<<"KeyFrame::UpdateConnections, 2\n";
+    }
 
     // This should not happen
     if(KFcounter.empty())
         return;
+
+    if(debug){
+        cout<<"KeyFrame::UpdateConnections, 3\n";
+    }
 
     //If the counter is greater than threshold add connection
     //In case no keyframe counter is over threshold add the one with maximum counter
@@ -423,6 +434,9 @@ void KeyFrame::UpdateConnections()
 
     vector<pair<int,KeyFrame*> > vPairs;
     vPairs.reserve(KFcounter.size());
+    if(debug){
+        cout<<"KeyFrame::UpdateConnections, 4\n";
+    }
     for(map<KeyFrame*,int>::iterator mit=KFcounter.begin(), mend=KFcounter.end(); mit!=mend; mit++)
     {
         if(mit->second>nmax)
@@ -436,6 +450,9 @@ void KeyFrame::UpdateConnections()
             (mit->first)->AddConnection(this,mit->second);
         }
     }
+    if(debug){
+        cout<<"KeyFrame::UpdateConnections, 5\n";
+    }
 
     if(vPairs.empty())
     {
@@ -443,9 +460,17 @@ void KeyFrame::UpdateConnections()
         pKFmax->AddConnection(this,nmax);
     }
 
+    if(debug){
+        cout<<"KeyFrame::UpdateConnections, 6\n";
+    }
+
     sort(vPairs.begin(),vPairs.end());
     list<KeyFrame*> lKFs;
     list<int> lWs;
+
+    if(debug){
+        cout<<"KeyFrame::UpdateConnections, 7\n";
+    }
 
     // Edge-SLAM
     list<long int> lKFs_ids;
@@ -457,6 +482,10 @@ void KeyFrame::UpdateConnections()
 
         // Edge-SLAM
         lKFs_ids.push_front((vPairs[i].second)->mnId);
+    }
+
+    if(debug){
+        cout<<"KeyFrame::UpdateConnections, 8\n";
     }
 
     {
@@ -482,6 +511,11 @@ void KeyFrame::UpdateConnections()
             mbFirstConnection = false;
         }
     }
+
+    if(debug){
+        cout<<"KeyFrame::UpdateConnections, 9\n";
+    }
+     
 }
 
 void KeyFrame::AddChild(KeyFrame *pKF)

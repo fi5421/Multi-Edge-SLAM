@@ -181,10 +181,10 @@ namespace ORB_SLAM2
         cout << "Select Edge 1 or 2: ";
         // int edgeNumber;
         cin >> edgeNumber;
-        cout<<"Edge Selected: "<<edgeNumber<<endl;
+        cout << "Edge Selected: " << edgeNumber << endl;
         cin.clear();
         cin.ignore();
-        int *edgeNumberPointer=&edgeNumber;
+        int *edgeNumberPointer = &edgeNumber;
         // cout<<std::format("KeyFrame Connection port Edge1 {} Edge2 {}\n",port_number,port_number+1);
         int port_number = std::stoi(port);
         cout << "KeyFrame Connection port Edge1 " << port_number << " Edge2 " << port_number + 1 << endl;
@@ -967,19 +967,23 @@ namespace ORB_SLAM2
             //     f.open("SwitchTime.txt");
             //     f << "-------------SWITCHING EDGES at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
             //     f.close();
-            //     edgeNumber = 2; 
+            //     edgeNumber = 2;
             // }
 
-            if(mCurrentFrame.mnId>sync_start && sync_mode!=1 && mCurrentFrame.mnId<switch_frame){
+            if (mCurrentFrame.mnId > sync_start && sync_mode != 1 && mCurrentFrame.mnId < switch_frame)
+            {
+                cout<<"SYNC SIGNAL SENT\n";
                 frame_queue.enqueue("Start Sync");
-                sync_mode=1;
+                sync_mode = 1;
             }
 
-            if(mCurrentFrame.mnId>switch_frame && sync_mode!=0){
-                // edgeNumber=2;
-                sync_mode=0;
+            if (mCurrentFrame.mnId > switch_frame && sync_mode != 0)
+            {
+                edgeNumber=2;
+                sync_mode = 0;
+                frame_queue.enqueue("Active Edge");
+                // send end sync end signal here
             }
-
 
             cout << "Number of frames in MAP:" << mpMap->KeyFramesInMap() << endl;
         }
@@ -1178,8 +1182,8 @@ namespace ORB_SLAM2
         }
 
         // Update Connections
-        pKFini->UpdateConnections();
-        pKFcur->UpdateConnections();
+        pKFini->UpdateConnections(false);
+        pKFcur->UpdateConnections(false);
 
         // Bundle Adjustment
         cout << "New Map created with " << mpMap->MapPointsInMap() << " points" << endl;
@@ -2315,6 +2319,7 @@ namespace ORB_SLAM2
     {
         std::string msg;
         bool success = true;
+        // int startingEdge=*edgeNumber
 
         // This is not a busy wait because wait_dequeue function is blocking
         do

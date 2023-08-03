@@ -425,16 +425,18 @@ void LoopClosing::CorrectLoop()
             delete mpThreadGBA;
         }
     }
-
+    cout<<"LoopClosing::CorrectLoop, here 1\n";
     // Wait until Local Mapping has effectively stopped
     while(!mpLocalMapper->isStopped())
     {
         usleep(1000);
     }
 
-    // Ensure current keyframe is updated
-    mpCurrentKF->UpdateConnections();
+    cout<<"LoopClosing::CorrectLoop, here 2\n";
 
+    // Ensure current keyframe is updated
+    mpCurrentKF->UpdateConnections(false);
+    cout<<"LoopClosing::CorrectLoop, here 3\n";
     // Retrive keyframes connected to the current keyframe and compute corrected Sim3 pose by propagation
     mvpCurrentConnectedKFs = mpCurrentKF->GetVectorCovisibleKeyFrames();
     mvpCurrentConnectedKFs.push_back(mpCurrentKF);
@@ -443,11 +445,11 @@ void LoopClosing::CorrectLoop()
     CorrectedSim3[mpCurrentKF]=mg2oScw;
     cv::Mat Twc = mpCurrentKF->GetPoseInverse();
 
-
+    cout<<"LoopClosing::CorrectLoop, here 4\n";
     {
         // Get Map Mutex
         unique_lock<mutex> lock(mpMap->mMutexMapUpdate);
-
+        cout<<"LoopClosing::CorrectLoop, here 5\n";
         for(vector<KeyFrame*>::iterator vit=mvpCurrentConnectedKFs.begin(), vend=mvpCurrentConnectedKFs.end(); vit!=vend; vit++)
         {
             KeyFrame* pKFi = *vit;
@@ -471,7 +473,7 @@ void LoopClosing::CorrectLoop()
             //Pose without correction
             NonCorrectedSim3[pKFi]=g2oSiw;
         }
-
+        cout<<"LoopClosing::CorrectLoop, here 6\n";
         // Correct all MapPoints obsrved by current keyframe and neighbors, so that they align with the other side of the loop
         for(KeyFrameAndPose::iterator mit=CorrectedSim3.begin(), mend=CorrectedSim3.end(); mit!=mend; mit++)
         {
@@ -503,7 +505,7 @@ void LoopClosing::CorrectLoop()
                 pMPi->mnCorrectedReference = pKFi->mnId;
                 pMPi->UpdateNormalAndDepth();
             }
-
+            cout<<"LoopClosing::CorrectLoop, here 7\n";
             // Update keyframe pose with corrected Sim3. First transform Sim3 to SE3 (scale translation)
             Eigen::Matrix3d eigR = g2oCorrectedSiw.rotation().toRotationMatrix();
             Eigen::Vector3d eigt = g2oCorrectedSiw.translation();
@@ -516,9 +518,10 @@ void LoopClosing::CorrectLoop()
             pKFi->SetPose(correctedTiw);
 
             // Make sure connections are updated
-            pKFi->UpdateConnections();
-        }
+            pKFi->UpdateConnections(false);
 
+        }
+        cout<<"LoopClosing::CorrectLoop, here 8\n";
         // Start Loop Fusion
         // Update matched map points and replace if duplicated
         for(size_t i=0; i<mvpCurrentMatchedPoints.size(); i++)
@@ -537,6 +540,7 @@ void LoopClosing::CorrectLoop()
                 }
             }
         }
+        cout<<"LoopClosing::CorrectLoop, here 9\n";
     }
 
     // Project MapPoints observed in the neighborhood of the loop keyframe
@@ -553,7 +557,7 @@ void LoopClosing::CorrectLoop()
         vector<KeyFrame*> vpPreviousNeighbors = pKFi->GetVectorCovisibleKeyFrames();
 
         // Update connections. Detect new links.
-        pKFi->UpdateConnections();
+        pKFi->UpdateConnections(false);
         LoopConnections[pKFi]=pKFi->GetConnectedKeyFrames();
         for(vector<KeyFrame*>::iterator vit_prev=vpPreviousNeighbors.begin(), vend_prev=vpPreviousNeighbors.end(); vit_prev!=vend_prev; vit_prev++)
         {

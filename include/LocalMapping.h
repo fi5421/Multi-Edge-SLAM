@@ -50,7 +50,7 @@ class LocalMapping
 {
 public:
     // Edge-SLAM: added settings file path
-    LocalMapping(Map* pMap, KeyFrameDatabase* pKFDB, ORBVocabulary* pVoc, const string &strSettingPath, const float bMonocular, int edgeNumber);
+    LocalMapping(Map* pMap, KeyFrameDatabase* pKFDB, ORBVocabulary* pVoc, const string &strSettingPath, const float bMonocular, int edgeNumber_p);
 
     void SetLoopCloser(LoopClosing* pLoopCloser);
 
@@ -71,6 +71,8 @@ public:
     bool AcceptKeyFrames();
     void SetAcceptKeyFrames(bool flag);
     bool SetNotStop(bool flag);
+
+    int edgeNumber;
 
     
 
@@ -93,6 +95,8 @@ public:
 
     void startSync();
 
+    bool sync=false;
+    bool activeEdge=false;
 
 protected:
     // Edge-SLAM: measure
@@ -207,7 +211,9 @@ protected:
     static bool msRelocNewFFlag;    // Flag used to only send reloc map update when a new reloc frame is received
     const static int RELOC_FREQ;    // Set to: after how many ms from last reloc map, a new map should be sent
     void sendRelocMapUpdate();
-    bool sync=0;
+    
+
+    
 };
 
 } //namespace ORB_SLAM
