@@ -301,107 +301,109 @@ namespace ORB_SLAM2
 
         // for (int i = 0; i < (int)mapVec.size(); i++)
         // {
-            KeyFrame *tKF = new KeyFrame();
+        KeyFrame *tKF = new KeyFrame();
+        {
+            try
             {
-                try
-                {
-                    std::stringstream iis(msg);
-                    boost::archive::text_iarchive iia(iis);
-                    iia >> tKF;
-                    iis.clear();
-                }
-                catch (boost::archive::archive_exception e)
-                {
-                    cout << "log, LocalMapping::ProcessSubset, KF error" << e.what() << endl;
-                    return;
-                }
+                std::stringstream iis(msg);
+                boost::archive::text_iarchive iia(iis);
+                iia >> tKF;
+                iis.clear();
             }
-
-            tKF->setORBVocab(mpORBVocabulary);
-            tKF->setMapPointer(mpMap);
-            tKF->setKeyFrameDatabase(mpKeyFrameDB);
-            tKF->ComputeBoW();
-
-            if(mpMap->KeyFramesInMap()==0){
-                tKF->ChangeParent(NULL);
-            }
-
-            vector<MapPoint *> vpMapPointMatches = tKF->GetMapPointMatches();
-
-            for (size_t i = 0; i < vpMapPointMatches.size(); i++)
+            catch (boost::archive::archive_exception e)
             {
-                MapPoint *pMP = vpMapPointMatches[i];
-                if (pMP)
+                cout << "log, LocalMapping::ProcessSubset, KF error" << e.what() << endl;
+                return;
+            }
+        }
+
+        tKF->setORBVocab(mpORBVocabulary);
+        tKF->setMapPointer(mpMap);
+        tKF->setKeyFrameDatabase(mpKeyFrameDB);
+        tKF->ComputeBoW();
+
+        if (mpMap->KeyFramesInMap() == 0)
+        {
+            tKF->ChangeParent(NULL);
+            LastKeyFrameInSubset=tKF->mnId;
+        }
+
+        vector<MapPoint *> vpMapPointMatches = tKF->GetMapPointMatches();
+
+        for (size_t i = 0; i < vpMapPointMatches.size(); i++)
+        {
+            MapPoint *pMP = vpMapPointMatches[i];
+            if (pMP)
+            {
+                if (!pMP->isBad())
                 {
-                    if (!pMP->isBad())
+                    // If tracking id is set
+                    if (pMP->trSet)
                     {
-                        // If tracking id is set
-                        if (pMP->trSet)
+                        MapPoint *pMPMap = mpMap->RetrieveMapPoint(pMP->mnId, true);
+
+                        if (pMPMap != NULL)
                         {
-                            MapPoint *pMPMap = mpMap->RetrieveMapPoint(pMP->mnId, true);
+                            // Replace keyframe's mappoint pointer to the existing one in tracking local-map
+                            tKF->AddMapPoint(pMPMap, i);
 
-                            if (pMPMap != NULL)
-                            {
-                                // Replace keyframe's mappoint pointer to the existing one in tracking local-map
-                                tKF->AddMapPoint(pMPMap, i);
+                            // Add keyframe observation to the mappoint
+                            pMPMap->AddObservation(tKF, i);
 
-                                // Add keyframe observation to the mappoint
-                                pMPMap->AddObservation(tKF, i);
-
-                                // Delete duplicate mappoint
-                                delete pMP;
-                            }
-                            else
-                            {
-                                // Add keyframe's mappoint to tracking local-map
-                                mpMap->AddMapPoint(pMP);
-
-                                // Add keyframe observation to the mappoint
-                                pMP->AddObservation(tKF, i);
-                                pMP->setMapPointer(mpMap); // We are not sending the map pointer in marshalling
-                                pMP->SetReferenceKeyFrame(tKF);
-                            }
+                            // Delete duplicate mappoint
+                            delete pMP;
                         }
-                        else if (pMP->lmSet) // If tracking id is not set, but local-mapping id is set
+                        else
                         {
-                            MapPoint *pMPMap = mpMap->RetrieveMapPoint(pMP->lmMnId, false);
+                            // Add keyframe's mappoint to tracking local-map
+                            mpMap->AddMapPoint(pMP);
 
-                            if (pMPMap != NULL)
-                            {
-                                // Replace keyframe's mappoint pointer to the existing one in tracking local-map
-                                tKF->AddMapPoint(pMPMap, i);
+                            // Add keyframe observation to the mappoint
+                            pMP->AddObservation(tKF, i);
+                            pMP->setMapPointer(mpMap); // We are not sending the map pointer in marshalling
+                            pMP->SetReferenceKeyFrame(tKF);
+                        }
+                    }
+                    else if (pMP->lmSet) // If tracking id is not set, but local-mapping id is set
+                    {
+                        MapPoint *pMPMap = mpMap->RetrieveMapPoint(pMP->lmMnId, false);
 
-                                // Add keyframe observation to the mappoint
-                                pMPMap->AddObservation(tKF, i);
+                        if (pMPMap != NULL)
+                        {
+                            // Replace keyframe's mappoint pointer to the existing one in tracking local-map
+                            tKF->AddMapPoint(pMPMap, i);
 
-                                // Delete duplicate mappoint
-                                delete pMP;
-                            }
-                            else
-                            {
-                                // Assign tracking id
-                                pMP->AssignId(true);
+                            // Add keyframe observation to the mappoint
+                            pMPMap->AddObservation(tKF, i);
 
-                                // Add keyframe's mappoint to tracking local-map
-                                mpMap->AddMapPoint(pMP);
+                            // Delete duplicate mappoint
+                            delete pMP;
+                        }
+                        else
+                        {
+                            // Assign tracking id
+                            pMP->AssignId(true);
 
-                                // Add keyframe observation to the mappoint
-                                pMP->AddObservation(tKF, i);
-                                pMP->setMapPointer(mpMap); // We are not sending the map pointer in marshalling
-                                pMP->SetReferenceKeyFrame(tKF);
-                            }
+                            // Add keyframe's mappoint to tracking local-map
+                            mpMap->AddMapPoint(pMP);
+
+                            // Add keyframe observation to the mappoint
+                            pMP->AddObservation(tKF, i);
+                            pMP->setMapPointer(mpMap); // We are not sending the map pointer in marshalling
+                            pMP->SetReferenceKeyFrame(tKF);
                         }
                     }
                 }
             }
+        }
 
-            mpMap->AddKeyFrame(tKF);
+        mpMap->AddKeyFrame(tKF);
 
-            mpKeyFrameDB->add(tKF);
-            cout<<"LocalMapping::ProcessSubset log, Added in to map: "<<tKF->mnId<<endl;
+        mpKeyFrameDB->add(tKF);
+        cout << "LocalMapping::ProcessSubset log, Added in to map: " << tKF->mnId << endl;
 
-            tKF = static_cast<KeyFrame *>(NULL);
-            vpMapPointMatches.clear();
+        tKF = static_cast<KeyFrame *>(NULL);
+        vpMapPointMatches.clear();
         // }
 
         // vector<KeyFrame *> vpKeyFrames = mpMap->GetAllKeyFrames();
@@ -510,8 +512,9 @@ namespace ORB_SLAM2
                 if (keyframe_queue.try_dequeue(msg))
                 {
                     // If relocalization was successful and a new keyframe is received, then drop any remaining relocalization frames in queue
-                    if(!activeEdge){
-                        cout<<"KeyFrame Dequeue successful msg length "<<msg.length()<<endl;
+                    if (!activeEdge)
+                    {
+                        cout << "KeyFrame Dequeue successful msg length " << msg.length() << endl;
                     }
                     if (msg.length() < 100)
                     {
@@ -519,13 +522,36 @@ namespace ORB_SLAM2
                         if (msg == "Start Sync" && edgeNumber == 2)
                         {
                             sync = true;
-                            cout<<"Sync: "<<sync<<endl;
+                            cout << "Sync: " << sync << endl;
                         }
                         else if (msg == "End Sync" && edgeNumber == 2)
                         {
                             sync = false;
-                            cout<<"Sync: "<<sync<<endl;
-                            cout<<"KeyFrames in Map after sync: "<<mpMap->KeyFramesInMap()<<endl;
+                            cout << "Sync: " << sync << endl;
+                            cout << "KeyFrames in Map after sync: " << mpMap->KeyFramesInMap() << endl;
+                            vector<KeyFrame *> current_local_map = mpMap->GetAllKeyFrames();
+                            
+                            for (vector<KeyFrame *>::iterator mit = current_local_map.begin(); mit != current_local_map.end(); mit++)
+                            {
+                                KeyFrame *tKF = *mit;
+                                KeyFrame *ptKF=mpMap->RetrieveKeyFrame(tKF->GetParent_int());
+                                tKF->ChangeParent(ptKF);
+                            }
+
+                            for (vector<KeyFrame *>::iterator mit = current_local_map.begin(); mit != current_local_map.end(); mit++)
+                            {
+                                KeyFrame *tKF = *mit;
+                                cout << "KeyFrame " << tKF->mnId<<" has Parent "<<tKF->GetParent_int();
+                                KeyFrame *ptKF = tKF->GetParent();
+                                if(ptKF){
+                                    cout<<" has Parent in map: "<<ptKF->mnId<<endl;
+
+                                }else{
+                                    cout<<" has no Parent in map \n";
+                                }
+                                
+                            }
+                           
                         }
                         else if (msg == "Active Edge")
                         {
@@ -533,7 +559,7 @@ namespace ORB_SLAM2
                         }
                     }
                     else
-                    {   
+                    {
                         // if(msg.length()>1000000){
                         //     cout<<"Subset Received: "<<msg.length()<<endl;
                         // }
@@ -1971,7 +1997,7 @@ namespace ORB_SLAM2
 
         // If map size is less than localMapSize, send the whole map, else send the lastest of size localMapSize
         long unsigned localMapSize = Subset_Map_Size;
-        cout<<"LocalMapping::startSync log, Subset Size: "<<localMapSize<<" KeyFrames in Map "<<mpMap->KeyFramesInMap()<<endl;
+        cout << "LocalMapping::startSync log, Subset Size: " << localMapSize << " KeyFrames in Map " << mpMap->KeyFramesInMap() << endl;
         stack<string> KF_stack;
         if (mpMap->KeyFramesInMap() <= localMapSize)
         {
@@ -1997,9 +2023,14 @@ namespace ORB_SLAM2
                 os.clear();
 
                 cout << tKF->mnId << " ";
-                KeyFrame *ptKF= tKF->GetParent();
-                if(ptKF){
-                    cout<<"with Parent: "<<ptKF->mnId<<endl;
+                KeyFrame *ptKF = tKF->GetParent();
+                if (ptKF)
+                {
+                    cout << "with Parent: " << ptKF->mnId << endl;
+                }
+                else if (ptKF == NULL)
+                {
+                    cout << "Parent is NULL" << endl;
                 }
             }
 
@@ -2034,7 +2065,7 @@ namespace ORB_SLAM2
             // Pop from stack until localMapSize is reached
             long unsigned count = 0;
             stack<long unsigned int> msLatestKFsId_copy = msLatestKFsId;
-            cout<<"Size of msLatestKFsId "<<msLatestKFsId_copy.size()<<endl;
+            // cout<<"Size of msLatestKFsId "<<msLatestKFsId_copy.size()<<endl;
             while ((count < localMapSize) && (msLatestKFsId_copy.size() > 0))
             {
                 KeyFrame *tKF = mpMap->RetrieveKeyFrame(msLatestKFsId_copy.top());
@@ -2054,26 +2085,35 @@ namespace ORB_SLAM2
                     os.clear();
 
                     cout << tKF->mnId << " ";
-                    KeyFrame *ptKF= tKF->GetParent();
-                    if(ptKF){
-                    cout<<"with Parent: "<<ptKF->mnId<<endl;
+                    KeyFrame *ptKF = tKF->GetParent();
+                    if (ptKF)
+                    {
+                        cout << "with Parent: " << ptKF->mnId << endl;
+                    }
+                    else if (ptKF == NULL)
+                    {
+                        cout << "Parent is NULL" << endl;
+                    }
+                    else
+                    {
+                        cout << "in else" << endl;
                     }
                     count++;
                 }
             }
 
-        //     // Clear Latest KF ids stack
-        //     // while (!msLatestKFsId.empty())
-        //     //     msLatestKFsId.pop();
+            //     // Clear Latest KF ids stack
+            //     // while (!msLatestKFsId.empty())
+            //     //     msLatestKFsId.pop();
 
-        //     // // Return last latest KF ids from temporary stack to original stack
-        //     // while (!msLocalKFsId.empty())
-        //     // {
-        //     //     msLatestKFsId.push(msLocalKFsId.top());
-        //     //     msLocalKFsId.pop();
-        //     // }
+            //     // // Return last latest KF ids from temporary stack to original stack
+            //     // while (!msLocalKFsId.empty())
+            //     // {
+            //     //     msLatestKFsId.push(msLocalKFsId.top());
+            //     //     msLocalKFsId.pop();
+            //     // }
 
-        //     cout << endl;
+            //     cout << endl;
         }
 
         std::vector<std::string> subVec;
@@ -2084,7 +2124,7 @@ namespace ORB_SLAM2
             // cout<<KF_stack.top().size()<<" ";
             KF_stack.pop();
         }
-        cout<<endl;
+        cout << endl;
 
         // std::ostringstream os;
         // boost::archive::text_oarchive oa(os);
@@ -2161,7 +2201,7 @@ namespace ORB_SLAM2
                 // {
                 if (messageQueue->size_approx() >= maxQueueSize)
                 {
-                    cout<<"log, LocalMapping::tcp_receive, message queue long\n";
+                    cout << "log, LocalMapping::tcp_receive, message queue long\n";
                     string data;
                     if (messageQueue->try_dequeue(data))
                     {
@@ -2170,7 +2210,7 @@ namespace ORB_SLAM2
                 }
                 messageQueue->enqueue(msg);
 
-                cout << "log,LocalMapping::tcp_receive,received " << name <<" " <<msg.length()<<endl;
+                cout << "log,LocalMapping::tcp_receive,received " << name << " " << msg.length() << endl;
                 // }
             }
         }

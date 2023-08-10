@@ -74,6 +74,8 @@ public:
 
     int edgeNumber;
 
+    int LastKeyFrameInSubset;
+
     
 
     void InterruptBA();
