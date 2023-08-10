@@ -547,6 +547,8 @@ void LoopClosing::CorrectLoop()
     // into the current keyframe and neighbors using corrected poses.
     // Fuse duplications.
     SearchAndFuse(CorrectedSim3);
+    cout<<"LoopClosing::CorrectLoop, here 10\n";
+    
 
     // After the MapPoint fusion, new links in the covisibility graph will appear attaching both sides of the loop
     map<KeyFrame*, set<KeyFrame*> > LoopConnections;
@@ -569,24 +571,27 @@ void LoopClosing::CorrectLoop()
         }
     }
 
+    cout<<"LoopClosing::CorrectLoop, here 11\n";
+    
+
     // Optimize graph
     Optimizer::OptimizeEssentialGraph(mpMap, mpMatchedKF, mpCurrentKF, NonCorrectedSim3, CorrectedSim3, LoopConnections, mbFixScale);
-
+    cout<<"LoopClosing::CorrectLoop, here 12\n";
     mpMap->InformNewBigChange();
-
+    cout<<"LoopClosing::CorrectLoop, here 13\n";
     // Add loop edge
     mpMatchedKF->AddLoopEdge(mpCurrentKF);
     mpCurrentKF->AddLoopEdge(mpMatchedKF);
-
+    cout<<"LoopClosing::CorrectLoop, here 14\n";
     // Launch a new thread to perform Global Bundle Adjustment
     mbRunningGBA = true;
     mbFinishedGBA = false;
     mbStopGBA = false;
     mpThreadGBA = new thread(&LoopClosing::RunGlobalBundleAdjustment,this,mpCurrentKF->mnId);
-
+    cout<<"LoopClosing::CorrectLoop, here 15\n";
     // Loop closed. Release Local Mapping.
     mpLocalMapper->Release();
-
+    cout<<"LoopClosing::CorrectLoop, here 16\n";
     mLastLoopKFid = mpCurrentKF->mnId;
 }
 

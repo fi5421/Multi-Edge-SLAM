@@ -178,9 +178,10 @@ namespace ORB_SLAM2
 
         cout << "Enter Port: ";
         getline(cin, port);
-        cout << "Select Edge 1 or 2: ";
-        // int edgeNumber;
-        cin >> edgeNumber;
+        // cout << "Select Edge 1 or 2: ";
+        // // int edgeNumber;
+        // cin >> edgeNumber;
+        edgeNumber=1;
         cout << "Edge Selected: " << edgeNumber << endl;
         cin.clear();
         cin.ignore();

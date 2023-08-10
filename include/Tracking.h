@@ -275,7 +275,7 @@ protected:
     int sync_mode=0;
 
 
-    int sync_start=900;
+    int sync_start=950;
     int switch_frame=1000;
 
 

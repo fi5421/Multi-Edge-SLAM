@@ -115,7 +115,7 @@ protected:
     static bool msNewKFFlag;    // Flag used to only send map update when a new keyframe is received
     static stack<long unsigned int> msLatestKFsId;  // Stack to keep latest keyframes ids
 
-    int Subset_Map_Size=6;
+    int Subset_Map_Size=10;
 
     // Edge-SLAM
     //New KeyFrame rules (according to fps)

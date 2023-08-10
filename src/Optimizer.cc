@@ -66,7 +66,7 @@ void Optimizer::BundleAdjustment(const vector<KeyFrame *> &vpKFs, const vector<M
         optimizer.setForceStopFlag(pbStopFlag);
 
     long unsigned int maxKFid = 0;
-
+  
     // Set KeyFrame vertices
     for(size_t i=0; i<vpKFs.size(); i++)
     {
@@ -812,13 +812,15 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* p
     const vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames();
     const vector<MapPoint*> vpMPs = pMap->GetAllMapPoints();
 
-    const unsigned int nMaxKFid = pMap->GetMaxKFid();
+    volatile const unsigned int nMaxKFid = pMap->GetMaxKFid();
 
     vector<g2o::Sim3,Eigen::aligned_allocator<g2o::Sim3> > vScw(nMaxKFid+1);
     vector<g2o::Sim3,Eigen::aligned_allocator<g2o::Sim3> > vCorrectedSwc(nMaxKFid+1);
     vector<g2o::VertexSim3Expmap*> vpVertices(nMaxKFid+1);
 
     const int minFeat = 100;
+
+    cout<<"Optimizer::OptimizeEssentialGrap log, here1\n";
 
     // Set KeyFrame vertices
     for(size_t i=0, iend=vpKFs.size(); i<iend;i++)
@@ -858,11 +860,12 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* p
         vpVertices[nIDi]=VSim3;
     }
 
+    cout<<"Optimizer::OptimizeEssentialGrap log, here1\n";
 
     set<pair<long unsigned int,long unsigned int> > sInsertedEdges;
 
     const Eigen::Matrix<double,7,7> matLambda = Eigen::Matrix<double,7,7>::Identity();
-
+    cout<<"Optimizer::OptimizeEssentialGrap log, here2\n";
     // Set Loop edges
     for(map<KeyFrame *, set<KeyFrame *> >::const_iterator mit = LoopConnections.begin(), mend=LoopConnections.end(); mit!=mend; mit++)
     {
@@ -893,49 +896,64 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* p
             sInsertedEdges.insert(make_pair(min(nIDi,nIDj),max(nIDi,nIDj)));
         }
     }
+    cout<<"Optimizer::OptimizeEssentialGrap log, here3\n";
 
     // Set normal edges
     for(size_t i=0, iend=vpKFs.size(); i<iend; i++)
     {
+        // if(i==0){
+             cout<<"Optimizer::OptimizeEssentialGrap log, here3.1."<<i<<endl;
+        // }
         KeyFrame* pKF = vpKFs[i];
 
         const int nIDi = pKF->mnId;
-
+        cout<<"Optimizer::OptimizeEssentialGrap log, here3.1.2."<<i<<endl;
         g2o::Sim3 Swi;
 
         LoopClosing::KeyFrameAndPose::const_iterator iti = NonCorrectedSim3.find(pKF);
-
+        cout<<"Optimizer::OptimizeEssentialGrap log, here3.1.3."<<i<<endl;
         if(iti!=NonCorrectedSim3.end())
             Swi = (iti->second).inverse();
         else
             Swi = vScw[nIDi].inverse();
 
+        
+
         KeyFrame* pParentKF = pKF->GetParent();
+        cout<<"pKF ID: "<<pKF->mnId<<endl;
+         cout<<"Optimizer::OptimizeEssentialGrap log, here3.1.4."<<i<<endl;
 
         // Spanning tree edge
         if(pParentKF)
-        {
-            int nIDj = pParentKF->mnId;
+        {   
+            
+            volatile int nIDj = pParentKF->mnId;        //seg fault here
 
             g2o::Sim3 Sjw;
-
+            // seg Fault here
             LoopClosing::KeyFrameAndPose::const_iterator itj = NonCorrectedSim3.find(pParentKF);
-
+            cout<<"Optimizer::OptimizeEssentialGrap log, here3.1.5."<<i<<endl;
             if(itj!=NonCorrectedSim3.end())
                 Sjw = itj->second;
             else
-                Sjw = vScw[nIDj];
+                Sjw = vScw[nIDj];       //seg fault here
 
             g2o::Sim3 Sji = Sjw * Swi;
-
+            cout<<"Optimizer::OptimizeEssentialGrap log, here3.1.6."<<i<<endl;
             g2o::EdgeSim3* e = new g2o::EdgeSim3();
             e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(nIDj)));
+            cout<<"Optimizer::OptimizeEssentialGrap log, here3.1.7."<<i<<endl;
             e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(nIDi)));
+            cout<<"Optimizer::OptimizeEssentialGrap log, here3.1.8."<<i<<endl;
             e->setMeasurement(Sji);
-
+            cout<<"Optimizer::OptimizeEssentialGrap log, here3.1.9."<<i<<endl;
             e->information() = matLambda;
+            cout<<"Optimizer::OptimizeEssentialGrap log, here3.1.10."<<i<<endl;
             optimizer.addEdge(e);
         }
+        // if(i==0){
+             cout<<"Optimizer::OptimizeEssentialGrap log, here3.2."<<i<<endl;
+        // }
 
         // Loop edges
         const set<KeyFrame*> sLoopEdges = pKF->GetLoopEdges();
@@ -962,6 +980,9 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* p
                 optimizer.addEdge(el);
             }
         }
+        // if(i==0){
+             cout<<"Optimizer::OptimizeEssentialGrap log, here3.3."<<i<<endl;
+        // }
 
         // Covisibility graph edges
         const vector<KeyFrame*> vpConnectedKFs = pKF->GetCovisiblesByWeight(minFeat);
@@ -995,14 +1016,19 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* p
                 }
             }
         }
+        // if(i==0){
+             cout<<"Optimizer::OptimizeEssentialGrap log, here3.4."<<i<<endl;
+        // }
     }
+    cout<<"Optimizer::OptimizeEssentialGrap log, here4\n";
 
     // Optimize!
     optimizer.initializeOptimization();
     optimizer.optimize(20);
+    cout<<"Optimizer::OptimizeEssentialGrap log, here5\n";
 
     unique_lock<mutex> lock(pMap->mMutexMapUpdate);
-
+    cout<<"Optimizer::OptimizeEssentialGrap log, here6\n";
     // SE3 Pose Recovering. Sim3:[sR t;0 1] -> SE3:[R t/s;0 1]
     for(size_t i=0;i<vpKFs.size();i++)
     {
@@ -1023,7 +1049,7 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* p
 
         pKFi->SetPose(Tiw);
     }
-
+    cout<<"Optimizer::OptimizeEssentialGrap log, here7\n";
     // Correct points. Transform to "non-optimized" reference keyframe pose and transform back with optimized pose
     for(size_t i=0, iend=vpMPs.size(); i<iend; i++)
     {
@@ -1066,6 +1092,7 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* p
 
         pMP->UpdateNormalAndDepth();
     }
+    cout<<"Optimizer::OptimizeEssentialGrap log, here8\n";
 }
 
 int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &vpMatches1, g2o::Sim3 &g2oS12, const float th2, const bool bFixScale)
