@@ -68,6 +68,16 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    int edgeNumber=1;
+
+
+    if(RunType.compare("server2") == 0){
+        edgeNumber=2;
+    }
+
+     string filename= "KeyFrameTrajectory_TUM_Format_edge"+to_string(edgeNumber)+".txt";
+    cout<<"Filename: "<<filename<<endl;
+
     // Edge-SLAM
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
     ORB_SLAM2::System SLAM(argv[1],argv[2],RunType,ORB_SLAM2::System::STEREO,true);
@@ -149,11 +159,11 @@ int main(int argc, char **argv)
         ros::spin();
 
         // Edge-SLAM: split shutdown between client and server
-        // Stop all threads
+        // Stop all threadskk
         SLAM.ServerShutdown();
 
         // Save camera trajectory
-        SLAM.SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory_TUM_Format.txt");
+        SLAM.SaveKeyFrameTrajectoryTUM(filename);
     }
 
     ros::shutdown();
