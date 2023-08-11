@@ -2116,7 +2116,7 @@ namespace ORB_SLAM2
             //     cout << endl;
         }
 
-        std::vector<std::string> subVec;
+        // std::vector<std::string> subVec;
         // cout<<"Pushed ";
         while (!KF_stack.empty())
         {
