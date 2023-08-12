@@ -192,6 +192,7 @@ protected:
     void sendRelocMapUpdate();
 
     string slamMode;
+    int edgeID;
 };
 
 } //namespace ORB_SLAM
