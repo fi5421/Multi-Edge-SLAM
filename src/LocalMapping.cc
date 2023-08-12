@@ -85,19 +85,19 @@ namespace ORB_SLAM2
         keyframe_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &keyframe_queue, keyframe_socket, 2, "keyframe", slamModePointer);
         // Frame connection
         cout << "Enter the port number used for frame connection: " << std::stoi(port_number) + 2;
-        getline(cin, dummy);
+        // getline(cin, dummy);
         frame_socket = new TcpSocket(ip, std::stoi(port_number) + 2);
         frame_socket->waitForConnection();
         frame_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &frame_queue, frame_socket, 1, "frame", slamModePointer);
         // Map connection
         cout << "Enter the port number used for map connection: " << std::stoi(port_number) + 4;
-        getline(cin, dummy);
+        // getline(cin, dummy);
         map_socket = new TcpSocket(ip, std::stoi(port_number) + 4);
         map_socket->waitForConnection();
         map_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_send, &map_queue, map_socket, "map");
         // Message connection
         cout << "Enter the port number used for message connection: " << std::stoi(port_number) + 6;
-        getline(cin, dummy);
+        // getline(cin, dummy);
         msg_socket = new TcpSocket(ip, std::stoi(port_number) + 6);
         msg_socket->waitForConnection();
         msg_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &msg_queue, msg_socket, 1, "message", slamModePointer);

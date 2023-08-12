@@ -979,7 +979,7 @@ namespace ORB_SLAM2
 
             // Edge-SLAM: debug
             cout << "log,Tracking::Track,end process frame " << mCurrentFrame.mnId << endl;
-            if (mCurrentFrame.mnId > 666) {
+            if (mCurrentFrame.mnId > 750) {
                 if (slamMode == "NORMAL") {
                     // ofstream f;
                     // f.open("myLogs_Tracking.txt", std::ios::app);
@@ -990,7 +990,7 @@ namespace ORB_SLAM2
                 }
             }
             
-            if (mCurrentFrame.mnId > 1333) {
+            if (mCurrentFrame.mnId > 1000) {
                 if (slamMode == "S-START") {
                     // ofstream f;
                     // f.open("myLogs_Tracking.txt", std::ios::app);
