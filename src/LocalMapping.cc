@@ -69,27 +69,35 @@ namespace ORB_SLAM2
         string dummy;
         cout << "Enter the device IP address: ";
         getline(cin, ip);
+        ip = "127.0.0.1";
         // Keyframe connection
-        cout << "Enter the port number used for keyframe connection: ";
+        cout << "Enter the port number used for keyframe connection: \n";
         getline(cin, port_number);
+        if ((std::stoi(port_number) % 2) == 0)
+        {
+            edgeID = 1;
+        } else {
+            edgeID = 2;
+        }
+        
         keyframe_socket = new TcpSocket(ip, std::stoi(port_number));
         keyframe_socket->waitForConnection();
         keyframe_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &keyframe_queue, keyframe_socket, 2, "keyframe", slamModePointer);
         // Frame connection
         cout << "Enter the port number used for frame connection: " << std::stoi(port_number) + 2;
-        getline(cin, dummy);
+        // getline(cin, dummy);
         frame_socket = new TcpSocket(ip, std::stoi(port_number) + 2);
         frame_socket->waitForConnection();
         frame_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &frame_queue, frame_socket, 1, "frame", slamModePointer);
         // Map connection
         cout << "Enter the port number used for map connection: " << std::stoi(port_number) + 4;
-        getline(cin, dummy);
+        // getline(cin, dummy);
         map_socket = new TcpSocket(ip, std::stoi(port_number) + 4);
         map_socket->waitForConnection();
         map_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_send, &map_queue, map_socket, "map");
         // Message connection
         cout << "Enter the port number used for message connection: " << std::stoi(port_number) + 6;
-        getline(cin, dummy);
+        // getline(cin, dummy);
         msg_socket = new TcpSocket(ip, std::stoi(port_number) + 6);
         msg_socket->waitForConnection();
         msg_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &msg_queue, msg_socket, 1, "message", slamModePointer);
@@ -357,10 +365,10 @@ namespace ORB_SLAM2
                 {
                     if (slamMode != "S-START")
                     {
-                        ofstream f;
-                        f.open("myLogs_LocalMapping.txt", std::ios::app);
-                        f << "-------------SENDING LOCAL MAP" << "-------------" << endl;
-                        f.close();
+                        // ofstream f;
+                        // f.open("myLogs_LocalMapping.txt", std::ios::app);
+                        // f << "-------------(edge " << edgeID << ")SENDING LOCAL MAP" << "-------------" << endl;
+                        // f.close();
                         sendLocalMapUpdate();
                     }
                 }
@@ -1579,22 +1587,22 @@ namespace ORB_SLAM2
                     if (msg == "HANDOVER")
                     {
                         *slamModePointer = "H-START";
-                        ofstream f;
-                        f.open("myLogs_LocalMapping.txt", std::ios::app);
-                        f << "-------------(edge 2) HAVE BEEN TOLD TO HANDOVER" << "-------------" << endl;
-                        f.close();
+                        // ofstream f;
+                        // f.open("myLogs_LocalMapping.txt", std::ios::app);
+                        // f << "-------------(edge 2) HAVE BEEN TOLD TO HANDOVER" << "-------------" << endl;
+                        // f.close();
                     } else if (msg == "PRE-SYNC") {
                         *slamModePointer = "S-START";
-                        ofstream f;
-                        f.open("myLogs_LocalMapping.txt", std::ios::app);
-                        f << "-------------(edge 2) HAVE BEEN TOLD TO PRE-SYNC" << "-------------" << endl;
-                        f.close();
+                        // ofstream f;
+                        // f.open("myLogs_LocalMapping.txt", std::ios::app);
+                        // f << "-------------(edge 2) HAVE BEEN TOLD TO PRE-SYNC" << "-------------" << endl;
+                        // f.close();
                     } else if (msg == "TERMINATE") {
                         *slamModePointer = "S-START";
-                        ofstream f;
-                        f.open("myLogs_LocalMapping.txt", std::ios::app);
-                        f << "-------------(first edge) HAVE BEEN TOLD TO TERMINATE" << "-------------" << endl;
-                        f.close(); 
+                        // ofstream f;
+                        // f.open("myLogs_LocalMapping.txt", std::ios::app);
+                        // f << "-------------(edge 1) HAVE BEEN TOLD TO TERMINATE" << "-------------" << endl;
+                        // f.close(); 
                     } else {
                         continue;
                     }
