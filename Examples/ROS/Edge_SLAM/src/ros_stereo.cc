@@ -68,7 +68,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    int edgeNumber=1
+    int edgeNumber=1;
     if(RunType.compare("server2") == 0){
         edgeNumber=2;
     }
