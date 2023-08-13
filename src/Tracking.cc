@@ -361,6 +361,8 @@ namespace ORB_SLAM2
         // Add keyframe to tracking local-map
         for (int i = 0; i < (int)mapVec.size(); i++)
         {
+            msg_queue.enqueue(mapVec[i]);
+
             // Reconstruct keyframe
             KeyFrame *tKF = new KeyFrame();
             {
@@ -380,7 +382,7 @@ namespace ORB_SLAM2
                     continue;
                 }
             }
-
+            
             // Set keyframe fields
             tKF->setORBVocab(mpORBVocabulary);
             tKF->setMapPointer(mpMap);
