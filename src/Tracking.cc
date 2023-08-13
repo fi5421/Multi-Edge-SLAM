@@ -962,7 +962,7 @@ namespace ORB_SLAM2
 
             // Edge-SLAM: debug
             cout << "log,Tracking::Track,end process frame " << mCurrentFrame.mnId << endl;
-            if ((mCurrentFrame.mnId > 1000) && (edgeNumber!=2)) {
+            if ((mCurrentFrame.mnId > 525) && (edgeNumber!=2)) {
                 ofstream f;
                 // f.open("SwitchTime.txt");
                 // f << "-------------SWITCHING EDGES at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
