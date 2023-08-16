@@ -1540,7 +1540,7 @@ namespace ORB_SLAM2
     // Edge-SLAM: the function has been changed to receive an int parameter to tell the server whether additional processing on the keyframe is required or not
     void Tracking::CreateNewKeyFrame(int needNKF)
     {
-        KeyFrame *pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);
+        KeyFrame *pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);   // keyframe initiaized based on the currently processed frame
 
         // Edge-SLAM: set keyframe needNKF
         pKF->SetNeedNKF(needNKF);
@@ -1574,7 +1574,7 @@ namespace ORB_SLAM2
                 }
             }
 
-            if (!vDepthIdx.empty())
+            if (!vDepthIdx.empty()) // Creates mappoints observed in said frame
             {
                 sort(vDepthIdx.begin(), vDepthIdx.end());
 
