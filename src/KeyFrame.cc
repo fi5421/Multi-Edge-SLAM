@@ -14,7 +14,7 @@
 * but WITHOUT ANY WARRANTY; without even the implied warranty of
 * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 * GNU General Public License for more details.
-*
+*g
 * You should have received a copy of the GNU General Public License
 * along with ORB-SLAM2. If not, see <http://www.gnu.org/licenses/>.
 */
@@ -533,6 +533,11 @@ KeyFrame* KeyFrame::GetParent()
 {
     unique_lock<mutex> lockCon(mMutexConnections);
     return mpParent;
+}
+
+long int KeyFrame::GetParent_int(){
+    unique_lock<mutex> lockCon(mMutexConnections);
+    return mpParent_id;
 }
 
 bool KeyFrame::hasChild(KeyFrame *pKF)

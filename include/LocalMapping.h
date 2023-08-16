@@ -89,6 +89,9 @@ public:
     void static tcp_receive(moodycamel::ConcurrentQueue<std::string>* messageQueue, TcpSocket* socketObject, unsigned int maxQueueSize, std::string name, string* slamModePointer, moodycamel::ConcurrentQueue<std::string>* messageQueue2);
     void static tcp_send(moodycamel::BlockingConcurrentQueue<std::string>* messageQueue, TcpSocket* socketObject, std::string name);
 
+    void localMapCallback(std::string msg);
+
+
 protected:
     // Edge-SLAM: measure
     static std::chrono::high_resolution_clock::time_point msLastMUStart;

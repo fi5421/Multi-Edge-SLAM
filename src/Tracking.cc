@@ -359,10 +359,14 @@ namespace ORB_SLAM2
         // Reconstruct keyframes loop
         // For every keyframe, check its mappoints, then add them to tracking local-map
         // Add keyframe to tracking local-map
+        if (slamMode == "S-START") {
+            for (int i = static_cast<int>(mapVec.size()) - 1; i >= 0; i--) {
+                msg_queue.enqueue(mapVec[i]);
+            }
+        }
+        
         for (int i = 0; i < (int)mapVec.size(); i++)
         {
-            msg_queue.enqueue(mapVec[i]);
-
             // Reconstruct keyframe
             KeyFrame *tKF = new KeyFrame();
             {
