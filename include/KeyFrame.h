@@ -92,6 +92,7 @@ public:
     KeyFrame(){}
 
     KeyFrame(Frame &F, Map* pMap, KeyFrameDatabase* pKFDB);
+    KeyFrame(KeyFrame &kF);  // Copy constructor
 
     // Pose functions
     void SetPose(const cv::Mat &Tcw);
@@ -130,7 +131,6 @@ public:
     // Edge-SLAM
     std::string GetParentId();
     std::set<long int> GetChildsIds();
-    long int GetParent_int();
 
     // Loop Edges
     void AddLoopEdge(KeyFrame* pKF);

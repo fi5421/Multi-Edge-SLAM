@@ -14,7 +14,7 @@
 * but WITHOUT ANY WARRANTY; without even the implied warranty of
 * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 * GNU General Public License for more details.
-*g
+*
 * You should have received a copy of the GNU General Public License
 * along with ORB-SLAM2. If not, see <http://www.gnu.org/licenses/>.
 */
@@ -57,6 +57,45 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
 
     SetPose(F.mTcw);
 }
+
+
+// Multi-Edge SLAM: KeyFrame copy constructor
+KeyFrame::KeyFrame(KeyFrame &kf) :
+    mnFrameId(kf.mnFrameId), mTimeStamp(kf.mTimeStamp), mnGridCols(kf.mnGridCols), mnGridRows(kf.mnGridRows),
+    mfGridElementWidthInv(kf.mfGridElementWidthInv), mfGridElementHeightInv(kf.mfGridElementHeightInv),
+    mnTrackReferenceForFrame(kf.mnTrackReferenceForFrame), mnFuseTargetForKF(kf.mnFuseTargetForKF),
+    mnBALocalForKF(kf.mnBALocalForKF), mnBAFixedForKF(kf.mnBAFixedForKF),
+    mnLoopQuery(kf.mnLoopQuery), mnLoopWords(kf.mnLoopWords), mnRelocQuery(kf.mnRelocQuery),
+    mnRelocWords(kf.mnRelocWords), mnBAGlobalForKF(kf.mnBAGlobalForKF),
+    fx(kf.fx), fy(kf.fy), cx(kf.cx), cy(kf.cy), invfx(kf.invfx), invfy(kf.invfy),
+    mbf(kf.mbf), mb(kf.mb), mThDepth(kf.mThDepth), N(kf.N), mvKeys(kf.mvKeys), mvKeysUn(kf.mvKeysUn),
+    mvuRight(kf.mvuRight), mvDepth(kf.mvDepth), mDescriptors(kf.mDescriptors.clone()),
+    mBowVec(kf.mBowVec), mFeatVec(kf.mFeatVec), mnScaleLevels(kf.mnScaleLevels),
+    mfScaleFactor(kf.mfScaleFactor), mfLogScaleFactor(kf.mfLogScaleFactor),
+    mvScaleFactors(kf.mvScaleFactors), mvLevelSigma2(kf.mvLevelSigma2),
+    mvInvLevelSigma2(kf.mvInvLevelSigma2), mnMinX(kf.mnMinX), mnMinY(kf.mnMinY),
+    mnMaxX(kf.mnMaxX), mnMaxY(kf.mnMaxY), mK(kf.mK.clone()), mvpMapPoints(kf.mvpMapPoints),
+    mpKeyFrameDB(kf.mpKeyFrameDB), mpORBvocabulary(kf.mpORBvocabulary),
+    mbFirstConnection(kf.mbFirstConnection), mpParent(kf.mpParent), mpParent_id(kf.mpParent_id),
+    mbNotErase(kf.mbNotErase), mbToBeErased(kf.mbToBeErased), mbBad(kf.mbBad),
+    mHalfBaseline(kf.mHalfBaseline), mpMap(kf.mpMap), mNeedNKF(kf.mNeedNKF), mPassedF(kf.mPassedF),
+    mResetKF(kf.mResetKF)
+{
+    mnId = kf.mnId;
+
+    SetNeedNKF(kf.GetNeedNKF());
+
+    mGrid.resize(mnGridCols);
+    for (int i = 0; i < mnGridCols; i++)
+    {
+        mGrid[i].resize(mnGridRows);
+        for (int j = 0; j < mnGridRows; j++)
+            mGrid[i][j] = kf.mGrid[i][j];
+    }
+
+    SetPose(kf.Tcw);
+}
+
 
 // Edge-SLAM: mNeedNKF setter function
 void KeyFrame::SetNeedNKF(int needNKF)
@@ -533,11 +572,6 @@ KeyFrame* KeyFrame::GetParent()
 {
     unique_lock<mutex> lockCon(mMutexConnections);
     return mpParent;
-}
-
-long int KeyFrame::GetParent_int(){
-    unique_lock<mutex> lockCon(mMutexConnections);
-    return mpParent_id;
 }
 
 bool KeyFrame::hasChild(KeyFrame *pKF)
