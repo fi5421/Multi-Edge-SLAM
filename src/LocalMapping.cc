@@ -415,12 +415,12 @@ namespace ORB_SLAM2
         if (!SetNotStop(true))
             return;
 
-        KeyFrame *tKF_reduced = new KeyFrame();
+        KeyFrame *tKF = new KeyFrame();
         try
         {
             std::stringstream iis(msg);
             boost::archive::text_iarchive iia(iis);
-            iia >> tKF_reduced;
+            iia >> tKF;
         }
         catch (boost::archive::archive_exception e)
         {
@@ -429,7 +429,7 @@ namespace ORB_SLAM2
             return;
         }
 
-        KeyFrame *tKF = new KeyFrame(*tKF_reduced);
+        tKF = new KeyFrame(*tKF);
 
         // Check for reset signal from client
         // reset caught on server

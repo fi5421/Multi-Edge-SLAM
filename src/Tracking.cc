@@ -365,6 +365,12 @@ namespace ORB_SLAM2
             }
         }
         
+        // if (slamMode == "S-START") {
+        //     for (int i = 0; i < static_cast<int>(mapVec.size()); i++) {
+        //         msg_queue.enqueue(mapVec[i]);
+        //     }
+        // }
+
         for (int i = 0; i < (int)mapVec.size(); i++)
         {
             // Reconstruct keyframe
