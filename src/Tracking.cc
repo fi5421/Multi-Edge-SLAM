@@ -980,9 +980,9 @@ namespace ORB_SLAM2
 
             if (mCurrentFrame.mnId > switch_frame && sync_mode != 0)
             {
-                edgeNumber=2;
+                // edgeNumber=2;
                 sync_mode = 0;
-                frame_queue.enqueue("Active Edge");
+                // frame_queue.enqueue("Active Edge");
                 // send end sync end signal here
             }
 

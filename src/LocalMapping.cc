@@ -2150,7 +2150,7 @@ namespace ORB_SLAM2
 
         // Clear
         KFsData.clear();
-        subVec.clear();
+        // subVec.clear();
 
         cout << "log,LocalMapping::startSync,subset Sent\n";
         // map_subset_queue_send.enqueue("Dummy");
