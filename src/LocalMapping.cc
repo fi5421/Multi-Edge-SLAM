@@ -429,7 +429,7 @@ namespace ORB_SLAM2
             return;
         }
 
-        KeyFrame *tKF = new KeyFrame(*tfk_reduced);
+        KeyFrame *tKF = new KeyFrame(*tKF_reduced);
 
         // Check for reset signal from client
         // reset caught on server

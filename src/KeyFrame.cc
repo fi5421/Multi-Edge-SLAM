@@ -83,7 +83,7 @@ KeyFrame::KeyFrame(KeyFrame &kf) :
 {
     mnId = kf.mnId;
 
-    SetNeedNKF(kf.SetNeedNKF());
+    SetNeedNKF(kf.GetNeedNKF());
 
     mGrid.resize(mnGridCols);
     for (int i = 0; i < mnGridCols; i++)
@@ -93,7 +93,7 @@ KeyFrame::KeyFrame(KeyFrame &kf) :
             mGrid[i][j] = kf.mGrid[i][j];
     }
 
-    SetPose(kf.mTcw);
+    SetPose(kf.Tcw);
 }
 
 
