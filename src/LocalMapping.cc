@@ -293,12 +293,15 @@ namespace ORB_SLAM2
 
             // Tracking will see that Local Mapping is busy
             SetAcceptKeyFrames(false);
+            // cout << "log,LocalMapping::run, : SetAcceptKeyFrames(false)" << endl;
 
             // Check if there are keyframes in the queue
             if (CheckNewKeyFrames())
             {
+                cout << "log,LocalMapping::run, : CheckNewKeyFrames() => TRUE" << endl;
                 // BoW conversion and insertion in Map
                 ProcessNewKeyFrame();
+                cout << "log,LocalMapping::run, : ProcessNewKeyFrame()" << endl;
 
                 // Edge-SLAM: check if new keyframe is received
                 {
@@ -312,32 +315,41 @@ namespace ORB_SLAM2
                         }
                     } 
                 }
-
+                
                 // Check recent MapPoints
+                
                 MapPointCulling();
-
+                cout << "log,LocalMapping::run, : MapPointCulling()" << endl;
                 // Triangulate new MapPoints
                 CreateNewMapPoints();
+                cout << "log,LocalMapping::run, : CreateNewMapPoints()" << endl;
 
+                cout << "log,LocalMapping::run, : Checking if no new KeyFrame" << endl;
                 if (!CheckNewKeyFrames())
                 {
                     // Find more matches in neighbor keyframes and fuse point duplications
+                    cout << "log,LocalMapping::run, : Searching for neighbors" << endl;
                     SearchInNeighbors();
+                    cout << "log,LocalMapping::run, : DONE Searching for neighbors" << endl;
                 }
-
+                
                 mbAbortBA = false;
-
+                cout << "log,LocalMapping::run, : About to do BA" << endl;
                 if (!CheckNewKeyFrames() && !stopRequested())
                 {
                     // Local BA
                     if (mpMap->KeyFramesInMap() > 2)
                         Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame, &mbAbortBA, mpMap);
+                        cout << "log,LocalMapping::run, : DONE BA" << endl;
+
 
                     // Check redundant local Keyframes
                     KeyFrameCulling();
+                    cout << "log,LocalMapping::run, : KeyFrameCulling" << endl;
                 }
 
                 mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);
+                cout << "log,LocalMapping::run, : InsertKeyFrame" << endl;
 
                 // Edge-SLAM: debug
                 cout << "log,LocalMapping::Run,map has " << mpMap->MapPointsInMap() << " mappoints and " << mpMap->KeyFramesInMap() << " keyframes" << endl;
@@ -876,6 +888,7 @@ namespace ORB_SLAM2
     void LocalMapping::SearchInNeighbors()
     {
         // Retrieve neighbor keyframes
+        cout << "log,LocalMapping::SearchInNeighbors, : START Retrieve neighbor keyframes" << endl;
         int nn = 10;
         if (mbMonocular)
             nn = 20;
@@ -899,8 +912,8 @@ namespace ORB_SLAM2
                 vpTargetKFs.push_back(pKFi2);
             }
         }
-
         // Search matches by projection from current KF in target KFs
+        cout << "log,LocalMapping::SearchInNeighbors, : START Search matches by projection from current KF in target KFs" << endl;
         ORBmatcher matcher;
         vector<MapPoint *> vpMapPointMatches = mpCurrentKeyFrame->GetMapPointMatches();
         for (vector<KeyFrame *>::iterator vit = vpTargetKFs.begin(), vend = vpTargetKFs.end(); vit != vend; vit++)
@@ -911,6 +924,7 @@ namespace ORB_SLAM2
         }
 
         // Search matches by projection from target KFs in current KF
+        cout << "log,LocalMapping::SearchInNeighbors, : START Search matches by projection from target KFs in current KF" << endl;
         vector<MapPoint *> vpFuseCandidates;
         vpFuseCandidates.reserve(vpTargetKFs.size() * vpMapPointMatches.size());
 
@@ -935,6 +949,7 @@ namespace ORB_SLAM2
         matcher.Fuse(mpCurrentKeyFrame, vpFuseCandidates);
 
         // Update points
+         cout << "log,LocalMapping::SearchInNeighbors, : START Update Points" << endl;
         vpMapPointMatches = mpCurrentKeyFrame->GetMapPointMatches();
         for (size_t i = 0, iend = vpMapPointMatches.size(); i < iend; i++)
         {
@@ -943,14 +958,18 @@ namespace ORB_SLAM2
             {
                 if (!pMP->isBad())
                 {
+                    cout << "log,LocalMapping::SearchInNeighbors, : If not bad, compute descriptors" << endl;
                     pMP->ComputeDistinctiveDescriptors();
+                    cout << "log,LocalMapping::SearchInNeighbors, : Then update normal and depth" << endl;
                     pMP->UpdateNormalAndDepth();
+                    cout << "log,LocalMapping::SearchInNeighbors, : DONE process on not bad map point" << endl;
                 }
             }
         }
-
+        cout << "log,LocalMapping::SearchInNeighbors, : START Update connections in covisibility graph" << endl;
         // Update connections in covisibility graph
         mpCurrentKeyFrame->UpdateConnections();
+        cout << "log,LocalMapping::SearchInNeighbors, : RETURN" << endl;
     }
 
     cv::Mat LocalMapping::ComputeF12(KeyFrame *&pKF1, KeyFrame *&pKF2)
