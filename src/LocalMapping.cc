@@ -278,30 +278,7 @@ namespace ORB_SLAM2
                             data.clear();
                         }
                     }
-                    if (msg == "HANDOVER") {
-                        vector<KeyFrame *> current_local_map = mpMap->GetAllKeyFrames();
-                        
-                        for (vector<KeyFrame *>::iterator mit = current_local_map.begin(); mit != current_local_map.end(); mit++)
-                        {
-                            KeyFrame *tKF = *mit;
-                            KeyFrame *ptKF=mpMap->RetrieveKeyFrame(tKF->GetParent_int());
-                            tKF->ChangeParent(ptKF);
-                        }
-
-                        // for (vector<KeyFrame *>::iterator mit = current_local_map.begin(); mit != current_local_map.end(); mit++)
-                        // {
-                        //     KeyFrame *tKF = *mit;
-                        //     cout << "KeyFrame " << tKF->mnId<<" has Parent "<<tKF->GetParent_int();
-                        //     KeyFrame *ptKF = tKF->GetParent();
-                        //     if(ptKF){
-                        //         cout<<" has Parent in map: "<<ptKF->mnId<<endl;
-
-                        //     } else{
-                        //         cout<<" has no Parent in map \n";
-                        //     }
-                        // }
-                    }
-                    else if (slamMode == "S-START") {
+                    if (slamMode == "S-START") {
                         localMapCallback(msg);
                     }
                     else {
@@ -327,7 +304,12 @@ namespace ORB_SLAM2
                 {
                     string msg;
                     if (keyframe_queue.try_dequeue(msg)) {
+                        if (slamMode == "S-START") {
+                            localMapCallback(msg);
+                        }
+                        else {
                             keyframeCallback(msg);
+                        }
                     } 
                 }
 
@@ -421,130 +403,84 @@ namespace ORB_SLAM2
 
     void LocalMapping::localMapCallback(std::string msg)
     {
-        cout << "LocalMapping::localMapCallback log, Starting processing local map\n";
+        // If Local Mapping is freezed by a Loop Closure do not insert keyframes
+        if (isStopped() || stopRequested())
+            return;
 
-        KeyFrame *tKF = new KeyFrame();
+        // If system reset is in process, then return
+        if (CheckReset())
+            return;
+
+        // Moved from CreateNewKeyFrame() function in tracking thread on client
+        if (!SetNotStop(true))
+            return;
+
+        KeyFrame *tKF_reduced = new KeyFrame();
+        try
         {
-            try
-            {
-                std::stringstream iis(msg);
-                boost::archive::text_iarchive iia(iis);
-                iia >> tKF;
-                iis.clear();
-            }
-            catch (boost::archive::archive_exception e)
-            {
-                cout << "log, LocalMapping::localMapCallback, KF error" << e.what() << endl;
-                return;
-            }
+            std::stringstream iis(msg);
+            boost::archive::text_iarchive iia(iis);
+            iia >> tKF_reduced;
+        }
+        catch (boost::archive::archive_exception e)
+        {
+            cout << "log,LocalMapping::localMapCallback,error: " << e.what() << endl;
+            SetNotStop(false);
+            return;
         }
 
-        if (mpMap->RetrieveKeyFrame(tKF->mnId)) {
+        KeyFrame *tKF = new KeyFrame(*tfk_reduced);
+
+        // Check for reset signal from client
+        // reset caught on server
+        if (tKF->GetResetKF() || (tKF->mnFrameId < mnLastKeyFrameId))
+        {
+            cout << "log,LocalMapping::localMapCallback,received reset signal from client with keyframe " << tKF->mnId << endl;
+
+            RequestReset();
+            SetNotStop(false);
             return;
         }
 
         tKF->setORBVocab(mpORBVocabulary);
         tKF->setMapPointer(mpMap);
         tKF->setKeyFrameDatabase(mpKeyFrameDB);
-        tKF->ComputeBoW();
 
-        if (mpMap->KeyFramesInMap() == 0)
+        // Check keyframe after receiving it from the client
+        // If first received keyframe then insert without additional checking
+        if ((tKF->mnId < 1) || (mpMap->KeyFramesInMap() < 1))
         {
             tKF->ChangeParent(NULL);
+            InsertKeyFrame(tKF);
+            mpMap->mvpKeyFrameOrigins.push_back(tKF);
+            msLatestKFsId.push(tKF->mnId);
+            mnLastKeyFrameId = tKF->mnFrameId;
+
+            msNewKFFlag = true;
+
+            cout << "log,LocalMapping::localMapCallback,accepted initial keyframe " << tKF->mnId << endl;
         }
-
-        vector<MapPoint *> vpMapPointMatches = tKF->GetMapPointMatches();
-
-        for (size_t i = 0; i < vpMapPointMatches.size(); i++)
+        else
         {
-            MapPoint *pMP = vpMapPointMatches[i];
-            if (pMP)
+            if (NeedNewKeyFrame(tKF))
             {
-                if (!pMP->isBad())
-                {
-                    // If tracking id is set
-                    if (pMP->trSet)
-                    {
-                        MapPoint *pMPMap = mpMap->RetrieveMapPoint(pMP->mnId, true);
+                InsertKeyFrame(tKF);
+                msLatestKFsId.push(tKF->mnId);
+                mnLastKeyFrameId = tKF->mnFrameId;
 
-                        if (pMPMap != NULL)
-                        {
-                            // Replace keyframe's mappoint pointer to the existing one in tracking local-map
-                            tKF->AddMapPoint(pMPMap, i);
+                msNewKFFlag = true;
 
-                            // Add keyframe observation to the mappoint
-                            pMPMap->AddObservation(tKF, i);
-
-                            // Delete duplicate mappoint
-                            delete pMP;
-                        }
-                        else
-                        {
-                            // Add keyframe's mappoint to tracking local-map
-                            mpMap->AddMapPoint(pMP);
-
-                            // Add keyframe observation to the mappoint
-                            pMP->AddObservation(tKF, i);
-                            pMP->setMapPointer(mpMap); // We are not sending the map pointer in marshalling
-                            pMP->SetReferenceKeyFrame(tKF);
-                        }
-                    }
-                    else if (pMP->lmSet) // If tracking id is not set, but local-mapping id is set
-                    {
-                        MapPoint *pMPMap = mpMap->RetrieveMapPoint(pMP->lmMnId, false);
-
-                        if (pMPMap != NULL)
-                        {
-                            // Replace keyframe's mappoint pointer to the existing one in tracking local-map
-                            tKF->AddMapPoint(pMPMap, i);
-
-                            // Add keyframe observation to the mappoint
-                            pMPMap->AddObservation(tKF, i);
-
-                            // Delete duplicate mappoint
-                            delete pMP;
-                        }
-                        else
-                        {
-                            // Assign tracking id
-                            pMP->AssignId(true);
-
-                            // Add keyframe's mappoint to tracking local-map
-                            mpMap->AddMapPoint(pMP);
-
-                            // Add keyframe observation to the mappoint
-                            pMP->AddObservation(tKF, i);
-                            pMP->setMapPointer(mpMap); // We are not sending the map pointer in marshalling
-                            pMP->SetReferenceKeyFrame(tKF);
-                        }
-                    }
-                }
+                cout << "log,LocalMapping::localMapCallback,accepted keyframe " << tKF->mnId << endl;
             }
+            else
+                cout << "log,LocalMapping::localMapCallback,dropped keyframe " << tKF->mnId << endl;
         }
 
-        mpMap->AddKeyFrame(tKF);
+        // Set relocalization variables
+        msRelocStatus = false;
+        msRelocNewFFlag = false;
 
-        mpKeyFrameDB->add(tKF);
-        cout << "LocalMapping::localMapCallback log, Added to map: " << tKF->mnId << endl;
-
-        tKF = static_cast<KeyFrame *>(NULL);
-        vpMapPointMatches.clear();
-
-        // Get all map points in tracking local-map
-        vector<MapPoint *> vpMapPoints = mpMap->GetAllMapPoints();
-
-        for (std::vector<MapPoint *>::iterator it = vpMapPoints.begin(); it != vpMapPoints.end(); ++it)
-        {
-            MapPoint *rMP = *it;
-
-            if ((unsigned)rMP->mnFirstKFid == rMP->GetReferenceKeyFrame()->mnId)
-                continue;
-
-            KeyFrame *rKF = mpMap->RetrieveKeyFrame(rMP->mnFirstKFid);
-
-            if (rKF)
-                rMP->SetReferenceKeyFrame(rKF);
-        }
+        SetNotStop(false);
     }
 
     void LocalMapping::InsertKeyFrame(KeyFrame *pKF)
