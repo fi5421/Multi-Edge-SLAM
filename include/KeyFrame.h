@@ -131,6 +131,9 @@ public:
     std::string GetParentId();
     std::set<long int> GetChildsIds();
 
+
+    long int GetParent_int();
+
     // Loop Edges
     void AddLoopEdge(KeyFrame* pKF);
     std::set<KeyFrame*> GetLoopEdges();

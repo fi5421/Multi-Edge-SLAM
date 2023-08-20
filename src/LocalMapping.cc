@@ -310,6 +310,10 @@ namespace ORB_SLAM2
                     }
                     else
                     {
+                        if(sync){
+                            
+                        }
+
                         if (msRelocStatus)
                         {
                             string data;
