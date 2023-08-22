@@ -982,6 +982,7 @@ namespace ORB_SLAM2
                 edgeNumber=2;
                 sync_mode = 0;
                 frame_queue.enqueue("Active Edge");
+                cout<<"Active Edge signal sent\n";
                 // send end sync end signal here
             }
 

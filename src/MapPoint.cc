@@ -463,6 +463,12 @@ void MapPoint::UpdateNormalAndDepth()
         n++;
     }
 
+    if(pRefKF==NULL){
+        return;
+    }
+
+    // cout<<"pRefKF id: "<<pRefKF->mnId<<endl;
+
     cv::Mat PC = Pos - pRefKF->GetCameraCenter();
     const float dist = cv::norm(PC);
     const int level = pRefKF->mvKeysUn[observations[pRefKF]].octave;

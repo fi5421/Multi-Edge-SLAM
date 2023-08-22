@@ -125,6 +125,7 @@ namespace ORB_SLAM2
         {
             // Set the pointer to NULL
             mpParent = static_cast<KeyFrame *>(NULL);
+            mpParent_id=0;
         }
 
         // Reconstruct children keyframes
@@ -385,10 +386,10 @@ namespace ORB_SLAM2
             vpMP = mvpMapPoints;
         }
 
-        if (debug)
-        {
-            cout << "KeyFrame::UpdateConnections, 1\n";
-        }
+        // if (debug)
+        // {
+        //     cout << "KeyFrame::UpdateConnections, 1\n";
+        // }
 
         // For all map points in keyframe check in which other keyframes are they seen
         // Increase counter for those keyframes
@@ -411,10 +412,10 @@ namespace ORB_SLAM2
                 KFcounter[mit->first]++; // gets keyframes from the map points
             }
         }
-        if (debug)
-        {
-            cout << "KeyFrame::UpdateConnections, 2\n";
-        }
+        // if (debug)
+        // {
+        //     cout << "KeyFrame::UpdateConnections, 2\n";
+        // }
 
         // This should not happen
         if (KFcounter.empty())
@@ -450,10 +451,10 @@ namespace ORB_SLAM2
                 (mit->first)->AddConnection(this, mit->second);
             }
         }
-        if (debug)
-        {
-            cout << "KeyFrame::UpdateConnections, 5\n";
-        }
+        // if (debug)
+        // {
+        //     cout << "KeyFrame::UpdateConnections, 5\n";
+        // }
 
         if (vPairs.empty())
         {
@@ -461,19 +462,19 @@ namespace ORB_SLAM2
             pKFmax->AddConnection(this, nmax);
         }
 
-        if (debug)
-        {
-            cout << "KeyFrame::UpdateConnections, 6\n";
-        }
+        // if (debug)
+        // {
+        //     cout << "KeyFrame::UpdateConnections, 6\n";
+        // }
 
         sort(vPairs.begin(), vPairs.end());
         list<KeyFrame *> lKFs;
         list<int> lWs;
 
-        if (debug)
-        {
-            cout << "KeyFrame::UpdateConnections, 7\n";
-        }
+        // if (debug)
+        // {
+        //     cout << "KeyFrame::UpdateConnections, 7\n";
+        // }
 
         // Edge-SLAM
         list<long int> lKFs_ids;
@@ -487,10 +488,10 @@ namespace ORB_SLAM2
             lKFs_ids.push_front((vPairs[i].second)->mnId);
         }
 
-        if (debug)
-        {
-            cout << "KeyFrame::UpdateConnections, 8\n";
-        }
+        // if (debug)
+        // {
+        //     cout << "KeyFrame::UpdateConnections, 8\n";
+        // }
 
         {
             unique_lock<mutex> lockCon(mMutexConnections);
@@ -506,9 +507,10 @@ namespace ORB_SLAM2
 
             if (mbFirstConnection && mnId != 0)
             {
+                // setting parent here
                 if (mpMap->RetrieveKeyFrame(mvpOrderedConnectedKeyFrames.front()->mnId))
                 {
-                    mpParent = mvpOrderedConnectedKeyFrames.front(); // sets the parent from the keyframes obtained from the map points
+                    mpParent = mpMap->RetrieveKeyFrame(mvpOrderedConnectedKeyFrames.front()->mnId); // sets the parent from the keyframes obtained from the map points
 
                     // Edge-SLAM
                     mpParent_id = mpParent->mnId;
@@ -522,12 +524,24 @@ namespace ORB_SLAM2
                     mpParent_id = 0;
                 }
             }
+
+        //     if(mbFirstConnection && mnId!=0)
+        // {
+        // //     if()
+        //     mpParent = mvpOrderedConnectedKeyFrames.front();
+
+        //     // Edge-SLAM
+        //     mpParent_id = mpParent->mnId;
+
+        //     mpParent->AddChild(this);
+        //     mbFirstConnection = false;
+        // }
         }
 
-        if (debug)
-        {
-            cout << "KeyFrame::UpdateConnections, 9\n";
-        }
+        // if (debug)
+        // {
+        //     cout << "KeyFrame::UpdateConnections, 9\n";
+        // }
     }
 
     void KeyFrame::AddChild(KeyFrame *pKF)

@@ -911,11 +911,13 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* p
             Swi = vScw[nIDi].inverse();
 
         KeyFrame* pParentKF = pKF->GetParent();
+        volatile int parentKF_id=pKF->GetParent_int();
 
         // Spanning tree edge
-        if(pParentKF)
+        if(pParentKF!=NULL && parentKF_id!=0)
         {
             int nIDj = pParentKF->mnId;
+
 
             g2o::Sim3 Sjw;
 
