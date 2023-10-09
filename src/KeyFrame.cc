@@ -574,6 +574,11 @@ KeyFrame* KeyFrame::GetParent()
     return mpParent;
 }
 
+long int KeyFrame::GetParent_int(){
+    unique_lock<mutex> lockCon(mMutexConnections);
+    return mpParent_id;
+}
+
 bool KeyFrame::hasChild(KeyFrame *pKF)
 {
     unique_lock<mutex> lockCon(mMutexConnections);

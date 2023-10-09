@@ -456,13 +456,17 @@ void MapPoint::UpdateNormalAndDepth()
     int n=0;
     for(map<KeyFrame*,size_t>::iterator mit=observations.begin(), mend=observations.end(); mit!=mend; mit++)
     {
+
         KeyFrame* pKF = mit->first;
+        // cout<<""                                                                         //Print the mnId to find if it is junk value
         cv::Mat Owi = pKF->GetCameraCenter();
         cv::Mat normali = mWorldPos - Owi;
         normal = normal + normali/cv::norm(normali);
         n++;
     }
 
+    cout<<"Mapoint::Update NormalDepth in Map point: "<<mnId<<endl;
+    cout<<"Mappoint,Update NormalDepth:: RefKF: "<<pRefKF->mnId<<endl;
     cv::Mat PC = Pos - pRefKF->GetCameraCenter();
     const float dist = cv::norm(PC);
     const int level = pRefKF->mvKeysUn[observations[pRefKF]].octave;

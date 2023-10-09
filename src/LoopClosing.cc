@@ -723,13 +723,14 @@ void LoopClosing::RunGlobalBundleAdjustment(unsigned long nLoopKF)
                     KeyFrame* pRefKF = pMP->GetReferenceKeyFrame();
 
                     // Edge-SLAM: check if mappoint refKF is NULL
-                    if(!pRefKF)
+                    if(pRefKF==NULL)
                     {
                         // Edge-SLAM: debug
                         cout << "log,LoopClosing::RunGlobalBundleAdjustment,mappoint RefKF is NULL" << endl;
 
                         continue;
                     }
+                    cout<<"LoopClosing::BundleAdjustment:: Ref KF: "<<pRefKF->mnId<<endl;
 
                     if(pRefKF->mnBAGlobalForKF!=nLoopKF)
                         continue;

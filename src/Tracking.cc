@@ -2413,7 +2413,7 @@ namespace ORB_SLAM2
                 continue;
             }
 
-            if ((*slamModePointer) == "S-START")
+            if ((*slamModePointer) == "H-START")
             {
                 // ofstream f;
                 // f.open("myLogs.txt", std::ios::app);

@@ -279,9 +279,28 @@ namespace ORB_SLAM2
                         }
                     }
                     if (slamMode == "S-START") {
+                        
                         localMapCallback(msg);
+                        // continue;
                     }
                     else {
+                        if(msg=="HANDOVER"){
+                            cout<<"Handover here\n";
+
+                            vector<KeyFrame *> current_local_map = mpMap->GetAllKeyFrames();
+                            cout<<"KFs sent in sync: ";
+                            for (vector<KeyFrame *>::iterator mit = current_local_map.begin(); mit != current_local_map.end(); mit++)
+                            {
+                                KeyFrame *tKF = *mit;
+                                // KeyFrame *ptKF=mpMap->RetrieveKeyFrame(tKF->GetParent_int());
+                                // tKF->ChangeParent(ptKF);
+                                cout<<tKF->mnId<<" ,";
+                            }
+                            cout<<endl;
+
+
+                            continue;
+                        }
                         keyframeCallback(msg);
                     }
                 }
@@ -415,84 +434,207 @@ namespace ORB_SLAM2
 
     void LocalMapping::localMapCallback(std::string msg)
     {
-        // If Local Mapping is freezed by a Loop Closure do not insert keyframes
-        if (isStopped() || stopRequested())
-            return;
 
-        // If system reset is in process, then return
-        if (CheckReset())
-            return;
 
-        // Moved from CreateNewKeyFrame() function in tracking thread on client
-        if (!SetNotStop(true))
-            return;
 
-        KeyFrame *tKF = new KeyFrame();
-        try
+         KeyFrame *tKF = new KeyFrame();
         {
-            std::stringstream iis(msg);
-            boost::archive::text_iarchive iia(iis);
-            iia >> tKF;
-        }
-        catch (boost::archive::archive_exception e)
-        {
-            cout << "log,LocalMapping::localMapCallback,error: " << e.what() << endl;
-            SetNotStop(false);
-            return;
+            try
+            {
+                std::stringstream iis(msg);
+                boost::archive::text_iarchive iia(iis);
+                iia >> tKF;
+                iis.clear();
+            }
+            catch (boost::archive::archive_exception e)
+            {
+                cout << "log, LocalMapping::ProcessSubset, KF error" << e.what() << endl;
+                return;
+            }
         }
 
-        tKF = new KeyFrame(*tKF);
 
-        // Check for reset signal from client
-        // reset caught on server
-        if (tKF->GetResetKF() || (tKF->mnFrameId < mnLastKeyFrameId))
+        if (mpMap->RetrieveKeyFrame(tKF->mnId)!=NULL)
         {
-            cout << "log,LocalMapping::localMapCallback,received reset signal from client with keyframe " << tKF->mnId << endl;
-
-            RequestReset();
-            SetNotStop(false);
             return;
         }
 
         tKF->setORBVocab(mpORBVocabulary);
         tKF->setMapPointer(mpMap);
         tKF->setKeyFrameDatabase(mpKeyFrameDB);
+        tKF->ComputeBoW();
 
-        // Check keyframe after receiving it from the client
-        // If first received keyframe then insert without additional checking
-        if ((tKF->mnId < 1) || (mpMap->KeyFramesInMap() < 1))
+        if (mpMap->KeyFramesInMap() == 0)
         {
             tKF->ChangeParent(NULL);
-            InsertKeyFrame(tKF);
-            mpMap->mvpKeyFrameOrigins.push_back(tKF);
-            msLatestKFsId.push(tKF->mnId);
-            mnLastKeyFrameId = tKF->mnFrameId;
-
-            msNewKFFlag = true;
-
-            cout << "log,LocalMapping::localMapCallback,accepted initial keyframe " << tKF->mnId << endl;
+            // LastKeyFrameInSubset=tKF->mnId;
         }
-        else
+
+        vector<MapPoint *> vpMapPointMatches = tKF->GetMapPointMatches();
+        int mapPoints_bfadding=mpMap->GetAllMapPoints().size();
+
+        cout<<"LocalMapping::ProcessSubset log, Map points in KeyFrame: "<<tKF->mnId<<" : "<<vpMapPointMatches.size()<<endl;
+        cout<<"LocalMapping::ProcessSubset log, Map points in map: "<<mapPoints_bfadding<<endl;
+
+        int mapPoints_Added=0;
+
+        for (size_t i = 0; i < vpMapPointMatches.size(); i++)
         {
-            if (NeedNewKeyFrame(tKF))
+            MapPoint *pMP = vpMapPointMatches[i];
+            if (pMP)
             {
-                InsertKeyFrame(tKF);
-                msLatestKFsId.push(tKF->mnId);
-                mnLastKeyFrameId = tKF->mnFrameId;
+                if (!pMP->isBad())
+                {
+                    // If tracking id is set
+                    if (pMP->trSet)
+                    {
+                        MapPoint *pMPMap = mpMap->RetrieveMapPoint(pMP->mnId, true);
 
-                msNewKFFlag = true;
+                        if (pMPMap != NULL)
+                        {
+                            // Replace keyframe's mappoint pointer to the existing one in tracking local-map
+                            tKF->AddMapPoint(pMPMap, i);
 
-                cout << "log,LocalMapping::localMapCallback,accepted keyframe " << tKF->mnId << endl;
+                            // Add keyframe observation to the mappoint
+                            pMPMap->AddObservation(tKF, i);
+
+                            // Delete duplicate mappoint
+                            delete pMP;
+                        }
+                        else
+                        {
+                            // Add keyframe's mappoint to tracking local-map
+                            mpMap->AddMapPoint(pMP);
+
+                            // Add keyframe observation to the mappoint
+                            pMP->AddObservation(tKF, i);
+                            pMP->setMapPointer(mpMap); // We are not sending the map pointer in marshalling
+                            pMP->SetReferenceKeyFrame(tKF);
+                            mapPoints_Added++;
+                        }
+                    }
+                    else if (pMP->lmSet) // If tracking id is not set, but local-mapping id is set
+                    {
+                        MapPoint *pMPMap = mpMap->RetrieveMapPoint(pMP->lmMnId, false);
+
+                        if (pMPMap != NULL)
+                        {
+                            // Replace keyframe's mappoint pointer to the existing one in tracking local-map
+                            tKF->AddMapPoint(pMPMap, i);
+
+                            // Add keyframe observation to the mappoint
+                            pMPMap->AddObservation(tKF, i);
+
+                            // Delete duplicate mappoint
+                            delete pMP;
+                        }
+                        else
+                        {
+                            // Assign tracking id
+                            pMP->AssignId(true);
+
+                            // Add keyframe's mappoint to tracking local-map
+                            mpMap->AddMapPoint(pMP);
+
+                            // Add keyframe observation to the mappoint
+                            pMP->AddObservation(tKF, i);
+                            pMP->setMapPointer(mpMap); // We are not sending the map pointer in marshalling
+                            pMP->SetReferenceKeyFrame(tKF);
+                            mapPoints_Added++;
+                        }
+                    }
+                }
             }
-            else
-                cout << "log,LocalMapping::localMapCallback,dropped keyframe " << tKF->mnId << endl;
         }
 
-        // Set relocalization variables
-        msRelocStatus = false;
-        msRelocNewFFlag = false;
+        mpMap->AddKeyFrame(tKF);
 
-        SetNotStop(false);
+        KeyFrame *parentKF=mpMap->RetrieveKeyFrame(tKF->GetParent_int());
+        
+        tKF->ChangeParent(parentKF);
+       
+
+
+        mpKeyFrameDB->add(tKF);
+        // cout << "LocalMapping::ProcessSubset log, Added in to map: " << tKF->mnId << endl;
+        const vector<MapPoint*> vpMPs = mpMap->GetAllMapPoints();
+        // cout<<"LocalMapping::ProcessSubset log, Map points in map: "<<vpMPs.size()<<endl;
+        // cout<<"LocalMapping::ProcessSubset log, Map points added: "<<mapPoints_Added<<endl;
+
+        if(mapPoints_bfadding+mapPoints_Added!=vpMPs.size()){
+            cout<<"mapPoints not matching"<<endl;
+            cout<<mapPoints_bfadding<<" + "<<mapPoints_Added<<" != "<<vpMPs.size()<<endl;
+        }
+        
+
+        tKF = static_cast<KeyFrame *>(NULL);
+        vpMapPointMatches.clear();
+        // }
+
+        // vector<KeyFrame *> vpKeyFrames = mpMap->GetAllKeyFrames();
+
+        // Initialize Reference KeyFrame and other KF variables
+        // if (vpKeyFrames.size() > 0)
+        // {
+        //     if (!refKFSet)
+        //         mpReferenceKF = vpKeyFrames[0];
+        //     else
+        //     {
+        //         if (mpReferenceKF->mnId < vpKeyFrames[0]->mnId)
+        //         {
+        //             mpReferenceKF = vpKeyFrames[0];
+        //             refKFSet = false;
+        //         }
+        //     }
+
+        //     mnLastKeyFrameId = vpKeyFrames[0]->mnFrameId;
+        //     mpLastKeyFrame = vpKeyFrames[0];
+        //     mnMapUpdateLastKFId = vpKeyFrames[0]->mnId;
+        // }
+
+        // for (std::vector<KeyFrame *>::iterator it = vpKeyFrames.begin(); it != vpKeyFrames.end(); ++it)
+        // {
+        //     KeyFrame *pKFCon = *it;
+
+        //     pKFCon->ReconstructConnections();
+
+        //     // Edge-SLAM: debug
+        //     cout << pKFCon->mnId << " ";
+
+        //     // If RefKF has lower id than current KF, then set it to that KF
+        //     if (mpReferenceKF->mnId < pKFCon->mnId)
+        //     {
+        //         mpReferenceKF = pKFCon;
+        //         refKFSet = false;
+        //     }
+
+        //     // Update other KF variables
+        //     if (mnMapUpdateLastKFId < pKFCon->mnId)
+        //     {
+        //         mnLastKeyFrameId = pKFCon->mnFrameId;
+        //         mpLastKeyFrame = pKFCon;
+        //         mnMapUpdateLastKFId = pKFCon->mnId;
+        //     }
+        // }
+
+        //  mCurrentFrame.mpReferenceKF = mpReferenceKF;
+
+        // Get all map points in tracking local-map
+        vector<MapPoint *> vpMapPoints = mpMap->GetAllMapPoints();
+
+        for (std::vector<MapPoint *>::iterator it = vpMapPoints.begin(); it != vpMapPoints.end(); ++it)
+        {
+            MapPoint *rMP = *it;
+
+            if ((unsigned)rMP->mnFirstKFid == rMP->GetReferenceKeyFrame()->mnId)
+                continue;
+
+            KeyFrame *rKF = mpMap->RetrieveKeyFrame(rMP->mnFirstKFid);
+
+            if (rKF)
+                rMP->SetReferenceKeyFrame(rKF);
+        }
+      
     }
 
     void LocalMapping::InsertKeyFrame(KeyFrame *pKF)
@@ -528,7 +670,7 @@ namespace ORB_SLAM2
         for (size_t i = 0; i < vpMapPointMatches.size(); i++)
         {
             MapPoint *pMP = vpMapPointMatches[i];
-            if (pMP)
+            if (pMP!=NULL)
             {
                 if (!pMP->isBad())
                 {
@@ -538,17 +680,22 @@ namespace ORB_SLAM2
                     if ((unsigned)pMP->mnFirstKFid != mpCurrentKeyFrame->mnId)
                     {
                         KeyFrame *pRefKF = mpMap->RetrieveKeyFrame(pMP->mnFirstKFid);
-                        if (pRefKF)
+                        if (pRefKF!=NULL)
                         {
+                            cout<<"setting from map\n";
                             pMP->SetReferenceKeyFrame(pRefKF);
                         }
                         else
                         {
-                            pMP->SetReferenceKeyFrame(static_cast<KeyFrame *>(NULL));
+                            pMP->SetReferenceKeyFrame(mpCurrentKeyFrame);
+                            cout<<"Setting Reference KF Current: "<<pMP->mnId<<endl;
+                            
+                            
                         }
                     }
                     else
                     {
+                        cout<<"Setting current\n";
                         pMP->SetReferenceKeyFrame(mpCurrentKeyFrame);
                     }
 
@@ -565,9 +712,17 @@ namespace ORB_SLAM2
                             pMP = mpMap->RetrieveMapPoint(pMP->mnId, true);
                         }
 
-                        if (pMP) // If it has not been removed and its available in the global map
+
+                        if (pMP!=NULL) // If it has not been removed and its available in the global map
                         {
+                            if(pMP==NULL){
+                                cout<<"map point NULL\n";
+                            }
                             pMP->AddObservation(mpCurrentKeyFrame, i);
+                            if(pMP->GetReferenceKeyFrame()==NULL){
+                                pMP->SetReferenceKeyFrame(mpCurrentKeyFrame);
+                                cout<<"ref kf NULL"<<endl;
+                            }
                             pMP->UpdateNormalAndDepth();
 
                             pMP->ComputeDistinctiveDescriptors();
