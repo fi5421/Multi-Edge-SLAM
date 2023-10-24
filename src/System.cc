@@ -388,7 +388,7 @@ void System::ServerShutdown()
     mpLocalMapper->RequestFinish();
 
     mpLoopCloser->RequestFinish();
-
+    cout<<"LoopClosing and LocalMapping have closed\n";
     // Wait until all thread have effectively stopped
     while(!mpLocalMapper->isFinished() || !mpLoopCloser->isFinished() || mpLoopCloser->isRunningGBA())
     {
@@ -397,6 +397,7 @@ void System::ServerShutdown()
 
     // Edge-SLAM: just to make sure all threads have stopped
     usleep(5000);
+    cout<<"Returning from ServerShutdown()\n";
 }
 
 // Edge-SLAM: disabled

@@ -378,12 +378,15 @@ namespace ORB_SLAM2
                 // Safe area to stop
                 while (isStopped() && !CheckFinish())
                 {
+                    cout << "BLOCKING HERE\n";
                     usleep(3000);
                 }
                 if (CheckFinish())
                 {
                     cout << "here1\n";
                     break;
+                } else {
+                    cout << "HERE2\n"
                 }
             }
 

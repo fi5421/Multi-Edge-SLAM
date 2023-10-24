@@ -87,7 +87,7 @@ int main(int argc, char **argv)
         // Edge-SLAM: split shutdown between client and server
         // Stop all threads
         SLAM.ServerShutdown();
-
+        
         // Save camera trajectory
         SLAM.SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory.txt");
     }
