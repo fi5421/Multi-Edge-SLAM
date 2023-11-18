@@ -54,8 +54,10 @@ def run_evo(gt,traj='KeyFrameTrajectory_TUM_Format1.txt'):
     out=out.decode('utf-8').split('\n')
     # print('b4 proc',out)
     if len(out)<10:
-        out=['error in evo' for i in range(7)]
+        print('ERROR IN EVO')
+        out=['error in evo' for i in range(8)]
         return out
+    num_pose=out[]
     out=[i for i in out if i!='']
     for i in range(len(out)):
         
