@@ -142,7 +142,7 @@ int main(int argc, char **argv)
         cout << "median tracking time: " << vTimesTrack[nImages/2] << endl;
         cout << "mean tracking time: " << totaltime/nImages << endl;
     }
-    else if(RunType.compare("server") == 0)
+    else if(RunType.compare("server") == 0 | RunType.compare("server2") == 0)
     {
         // Edge-SLAM
         // Create SLAM system. It initializes all system threads and gets ready to process frames.
