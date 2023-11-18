@@ -13,7 +13,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- *
+ 
  * You should have received a copy of the GNU General Public License
  * along with ORB-SLAM2. If not, see <http://www.gnu.org/licenses/>.
  */
@@ -206,7 +206,7 @@ namespace ORB_SLAM2
 
         port_number++;
         cout << "Keyframe thread created " << port_number << endl;
-        getline(cin, dummy);
+        // getline(cin, dummy);
         // cout<<std::format("Frame Connection port Edge1 {} Edge2 {}\n",port_number,port_number+1);
         cout << "Frame Connection port Edge1 " << port_number << " Edge2 " << port_number + 1 << endl;
 
@@ -224,7 +224,7 @@ namespace ORB_SLAM2
 
         port_number++;
         cout << "Frame thread created " << port_number << endl;
-        getline(cin, dummy);
+        // getline(cin, dummy);
         // cout<<std::format("Map Connection port Edge1 {} Edge2 {}\n",port_number,port_number+1);
         cout << "Map Connection port Edge1 " << port_number << " Edge2 " << port_number + 1 << endl;
 
@@ -962,7 +962,7 @@ namespace ORB_SLAM2
 
             // Edge-SLAM: debug
             cout << "log,Tracking::Track,end process frame " << mCurrentFrame.mnId << endl;
-            if ((mCurrentFrame.mnId > 525) && (edgeNumber!=2)) {
+            if ((mCurrentFrame.mnId > 375) && (edgeNumber!=2)) {
                 ofstream f;
                 // f.open("SwitchTime.txt");
                 // f << "-------------SWITCHING EDGES at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
