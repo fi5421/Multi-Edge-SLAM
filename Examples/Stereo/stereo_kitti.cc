@@ -142,7 +142,6 @@ int main(int argc, char **argv)
 
         // Edge-SLAM: split shutdown between client and server
         // Stop all threads
-        SLAM.ClientShutdown();
         sort(vTimesTrack.begin(),vTimesTrack.end());
         float totaltime = 0;
         for(int ni=0; ni<nImages; ni++)
@@ -152,6 +151,7 @@ int main(int argc, char **argv)
         cout << "-------" << endl << endl;
         cout << "median tracking time: " << vTimesTrack[nImages/2] << endl;
         cout << "mean tracking time: " << totaltime/nImages << endl;
+        SLAM.ClientShutdown();
 
         // Tracking time statistics
     }

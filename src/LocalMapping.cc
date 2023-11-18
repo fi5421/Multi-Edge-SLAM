@@ -64,14 +64,14 @@ LocalMapping::LocalMapping(Map *pMap, KeyFrameDatabase* pKFDB, ORBVocabulary* pV
     // Setting up connections
     string ip;
     string port_number1,port_number2,port_number3;
-    cout << "Enter the device IP address: ";
+    // cout << "Enter the device IP address: ";
     getline(cin, ip);
     cout<<"IP address: "<<ip<<endl;
     // Keyframe connection
-    cout << "Enter the port number used for keyframe connection: ";
     getline(cin, port_number1);
     getline(cin, port_number2);
     getline(cin, port_number3);
+    cout << "Enter the port number used for keyframe connection: ";
     cout<<"Port number: "<<port_number1<<" "<<port_number2<<" "<<port_number3<<endl;
     keyframe_socket = new TcpSocket(ip, std::stoi(port_number1));
     keyframe_socket->waitForConnection();

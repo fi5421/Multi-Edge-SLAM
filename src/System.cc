@@ -58,6 +58,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, std::str
         exit(-1);
     }
 
+    // cout<<"Port in system "<<port<<endl;
 
     //Load ORB Vocabulary
     cout << endl << "Loading ORB Vocabulary. This could take a while..." << endl;
