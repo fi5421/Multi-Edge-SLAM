@@ -210,7 +210,7 @@ namespace ORB_SLAM2
 
         port_number++;
         cout << "Keyframe thread created " << port_number << endl;
-        getline(cin, dummy);
+        // getline(cin, dummy);
         // cout<<std::format("Frame Connection port Edge1 {} Edge2 {}\n",port_number,port_number+1);
         cout << "Frame Connection port Edge1 " << port_number << " Edge2 " << port_number + 1 << endl;
 
@@ -228,7 +228,7 @@ namespace ORB_SLAM2
 
         port_number++;
         cout << "Frame thread created " << port_number << endl;
-        getline(cin, dummy);
+        // getline(cin, dummy);
         // cout<<std::format("Map Connection port Edge1 {} Edge2 {}\n",port_number,port_number+1);
         cout << "Map Connection port Edge1 " << port_number << " Edge2 " << port_number + 1 << endl;
 
@@ -979,7 +979,7 @@ namespace ORB_SLAM2
 
             // Edge-SLAM: debug
             cout << "log,Tracking::Track,end process frame " << mCurrentFrame.mnId << endl;
-            if (mCurrentFrame.mnId > 325) {
+            if (mCurrentFrame.mnId > 275) {
                 if (slamMode == "NORMAL") {
                     // ofstream f;
                     // f.open("myLogs_Tracking.txt", std::ios::app);
@@ -990,7 +990,7 @@ namespace ORB_SLAM2
                 }
             }
             
-            if (mCurrentFrame.mnId > 525) {
+            if (mCurrentFrame.mnId > 375) {
                 if (slamMode == "S-START") {
                     // ofstream f;
                     // f.open("myLogs_Tracking.txt", std::ios::app);

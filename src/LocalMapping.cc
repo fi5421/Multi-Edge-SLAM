@@ -68,7 +68,7 @@ namespace ORB_SLAM2
         string port_number;
         string dummy;
         cout << "Enter the device IP address: ";
-        getline(cin, ip);
+        // getline(cin, ip);
         ip = "127.0.0.1";
         // Keyframe connection
         cout << "Enter the port number used for keyframe connection: \n";
