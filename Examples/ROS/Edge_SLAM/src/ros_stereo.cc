@@ -24,6 +24,8 @@
 #include <fstream>
 #include <chrono>
 
+#include <signal.h>
+
 #include <ros/ros.h>
 #include <cv_bridge/cv_bridge.h>
 #include <message_filters/subscriber.h>
@@ -50,6 +52,13 @@ public:
     bool do_rectify;
     cv::Mat M1l,M2l,M1r,M2r;
 };
+
+void signal_callback_handler(int signum)
+{
+    cout << "Caught signal " << signum << endl;
+    // exit(0);
+}
+
 
 int main(int argc, char **argv)
 {
@@ -162,6 +171,7 @@ int main(int argc, char **argv)
 
         // Save camera trajectory
         SLAM.SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory_TUM_Format.txt");
+        // SLAM.SaveTrajectoryKITTI("KeyFrame_Traj_KITTI.txt");
     }
 
     ros::shutdown();

@@ -494,7 +494,7 @@ void System::SaveKeyFrameTrajectoryTUM(const string &filename)
 }
 
 // Edge-SLAM: disabled
-/*
+
 void System::SaveTrajectoryKITTI(const string &filename)
 {
     cout << endl << "Saving camera trajectory to " << filename << " ..." << endl;
@@ -548,7 +548,7 @@ void System::SaveTrajectoryKITTI(const string &filename)
     }
     f.close();
     cout << endl << "trajectory saved!" << endl;
-}*/
+}
 
 // Edge-SLAM: client
 int System::GetTrackingState()

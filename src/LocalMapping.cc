@@ -63,25 +63,27 @@ LocalMapping::LocalMapping(Map *pMap, KeyFrameDatabase* pKFDB, ORBVocabulary* pV
 
     // Setting up connections
     string ip;
-    string port_number;
+    string port_number1,port_number2,port_number3;
     cout << "Enter the device IP address: ";
     getline(cin, ip);
+    cout<<"IP address: "<<ip<<endl;
     // Keyframe connection
     cout << "Enter the port number used for keyframe connection: ";
-    getline(cin, port_number);
-    keyframe_socket = new TcpSocket(ip, std::stoi(port_number));
+    getline(cin, port_number1);
+    getline(cin, port_number2);
+    getline(cin, port_number3);
+    cout<<"Port number: "<<port_number1<<" "<<port_number2<<" "<<port_number3<<endl;
+    keyframe_socket = new TcpSocket(ip, std::stoi(port_number1));
     keyframe_socket->waitForConnection();
     keyframe_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &keyframe_queue, keyframe_socket, 2, "keyframe");
     // Frame connection
     cout << "Enter the port number used for frame connection: ";
-    getline(cin, port_number);
-    frame_socket = new TcpSocket(ip, std::stoi(port_number));
+    frame_socket = new TcpSocket(ip, std::stoi(port_number2));
     frame_socket->waitForConnection();
     frame_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &frame_queue, frame_socket, 1, "frame");
     // Map connection
     cout << "Enter the port number used for map connection: ";
-    getline(cin, port_number);
-    map_socket = new TcpSocket(ip, std::stoi(port_number));
+    map_socket = new TcpSocket(ip, std::stoi(port_number3));
     map_socket->waitForConnection();
     map_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_send, &map_queue, map_socket, "map");
 

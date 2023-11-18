@@ -25,6 +25,8 @@
 #include<iomanip>
 #include<chrono>
 
+#include<signal.h>
+
 #include<opencv2/core/core.hpp>
 
 #include<System.h>
@@ -36,6 +38,17 @@ using namespace std;
 
 void LoadImages(const string &strPathToSequence, vector<string> &vstrImageLeft,
                 vector<string> &vstrImageRight, vector<double> &vTimestamps);
+
+bool signal_loop=true;
+
+void signal_callback_handler(int signum)
+{
+    cout << "Caught signal " << signum << endl;
+    signal_loop=false;
+    cout<<"signal_loop: "<<signal_loop<<endl;
+    // exit(0);
+}
+
 
 int main(int argc, char **argv)
 {
@@ -130,8 +143,6 @@ int main(int argc, char **argv)
         // Edge-SLAM: split shutdown between client and server
         // Stop all threads
         SLAM.ClientShutdown();
-
-        // Tracking time statistics
         sort(vTimesTrack.begin(),vTimesTrack.end());
         float totaltime = 0;
         for(int ni=0; ni<nImages; ni++)
@@ -141,6 +152,8 @@ int main(int argc, char **argv)
         cout << "-------" << endl << endl;
         cout << "median tracking time: " << vTimesTrack[nImages/2] << endl;
         cout << "mean tracking time: " << totaltime/nImages << endl;
+
+        // Tracking time statistics
     }
     else if(RunType.compare("server") == 0)
     {
@@ -150,7 +163,16 @@ int main(int argc, char **argv)
 
         // Edge-SLAM: split shutdown between client and server
         // Stop all threads
+        signal(SIGINT, signal_callback_handler);
+        cout<<"signal_loop: "<<signal_loop<<endl;
+        while (signal_loop) {
+            usleep(100000);
+            // cout<<"signal_loop: "<<signal_loop<<endl;
+        }
+        cout<<"Server Shutdown Called\n";
+
         SLAM.ServerShutdown();
+        SLAM.SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory_TUM_Format1.txt");
     }
     else
     {
