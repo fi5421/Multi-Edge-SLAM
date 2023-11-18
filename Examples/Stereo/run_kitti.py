@@ -46,11 +46,18 @@ def run_evo(gt,traj='KeyFrameTrajectory_TUM_Format1.txt'):
     evo_proc=subprocess.Popen(['evo_ape','tum',gt,traj,'-va'],stdout=subprocess.PIPE)
     out,err=evo_proc.communicate()
     print(err)
+    # print(out)
+    outp=out.decode('utf-8')
     out=out.decode('utf-8').split('\n')
+    # print('comapred',out[-15])
     # print('b4 proc',out)
     if len(out)<10:
-        out=['error in evo' for i in range(7)]
+        print('ERROR IN EVO')
+        print(out)
+        out=['error in evo' for i in range(8)]
         return out
+    pose_pair=int(out[-15].split(' ')[1])
+    print('pose pair',pose_pair)
     out=[i for i in out if i!='']
     for i in range(len(out)):
         
@@ -62,7 +69,7 @@ def run_evo(gt,traj='KeyFrameTrajectory_TUM_Format1.txt'):
         except:
             out[i]=0
     # print(out[-7:])
-    return out[-7:]
+    return out[-7:]+[pose_pair]
 
 if len(sys.argv) != 5:
     print("Usage: python run_kitti.py <dataset> <portStart> <gt> <run_times>")
@@ -70,11 +77,14 @@ if len(sys.argv) != 5:
 
 dataset = sys.argv[1]
 portStart = int(sys.argv[2])
-index=['max','mean','median','min','rmse','sse','std','numKFS']
+index=['max','mean','median','min','rmse','sse','std','compare pose pairs','numKFS']
 df=pd.DataFrame(columns=index)
 print(df)
 
 runs=int(sys.argv[4])
+
+
+# res=run_evo(sys.argv[3])
 
 for i in range(runs):
     
@@ -102,6 +112,7 @@ for i in range(runs):
     file=open('KeyFrameTrajectory_TUM_Format1.txt','r')
     lines=file.readlines()
     num=len(lines)
+    file.close()
 
     print(evo_res+[num])
     df.loc[-1]=evo_res+[num]
@@ -111,6 +122,13 @@ for i in range(runs):
 
     print(df.head())
 
+df_t=df.transpose()
+df_t.to_csv('results.csv',sep='\t')
+
+proc=subprocess.Popen(['cat','results.csv'])
+
+proc.wait()
+os.remove('results.csv')
 
 
 
