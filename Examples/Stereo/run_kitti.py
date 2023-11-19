@@ -84,7 +84,37 @@ print(df)
 runs=int(sys.argv[4])
 
 
-# res=run_evo(sys.argv[3])
+proc=subprocess.Popen(['git','branch'])
+proc.wait()
+branch=input('enter branch name: ')
+
+gt=sys.argv[3].split('/')[-1]
+
+
+print('dataset',dataset)
+datasetl=dataset.split('/')[-3:-1]
+datasetl='/'.join(datasetl)
+
+
+time_text=time.strftime("%Y%m%d-%H%M%S")
+
+
+switch=input('swith frame:')
+sync=input('sync frame:')
+text_l=[f'branch\t{branch}',f'dataset\t{datasetl}',f'gt\t{gt}',f'runs\t{runs}',f'switch\t{switch}',f'sync\t{sync}',f'time\t{time_text}']
+
+text_l=[i+'\n' for i in text_l]
+
+dir='metadata'
+if not os.path.exists(dir):
+    os.makedirs(dir)
+
+file=open(dir+'/'+time_text+'.txt','w')
+file.writelines(text_l)
+
+
+
+# # res=run_evo(sys.argv[3])
 
 for i in range(runs):
     
@@ -122,13 +152,23 @@ for i in range(runs):
 
     print(df.head())
 
-df_t=df.transpose()
-df_t.to_csv('results.csv',sep='\t')
 
-proc=subprocess.Popen(['cat','results.csv'])
+dir='results'
+if not os.path.exists(dir):
+    os.makedirs(dir)
+
+df_t=df.transpose()
+df_t.to_csv(dir+'/'+time_text+'.csv',sep='\t')
+
+for i in text_l:
+    print(i[:-1])
+
+print('SAVED TO :',time_text+'.csv')
+
+proc=subprocess.Popen(['cat',dir+'/'+time_text+'.csv'])
 
 proc.wait()
-os.remove('results.csv')
+# os.remove('results.csv')
 
 
 
