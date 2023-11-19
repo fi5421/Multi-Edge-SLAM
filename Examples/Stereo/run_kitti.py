@@ -57,7 +57,7 @@ def run_evo(gt,traj='KeyFrameTrajectory_TUM_Format1.txt'):
         print('ERROR IN EVO')
         out=['error in evo' for i in range(8)]
         return out
-    num_pose=out[]
+    num_pose=int(out[-15].split(' ')[1])
     out=[i for i in out if i!='']
     for i in range(len(out)):
         
@@ -69,7 +69,7 @@ def run_evo(gt,traj='KeyFrameTrajectory_TUM_Format1.txt'):
         except:
             out[i]=0
     # print(out[-7:])
-    return out[-7:]
+    return out[-7:]+[num_pose]
 
 if len(sys.argv) != 5:
     print("Usage: python run_kitti.py <dataset> <portStart> <gt> <run_times>")
@@ -77,7 +77,7 @@ if len(sys.argv) != 5:
 
 dataset = sys.argv[1]
 portStart = int(sys.argv[2])
-index=['max','mean','median','min','rmse','sse','std','numKFS1','numKFS2','totalKFS']
+index=['max','mean','median','min','rmse','sse','std','num pose','numKFS1','numKFS2','totalKFS']
 df=pd.DataFrame(columns=index)
 print(df)
 
@@ -137,7 +137,7 @@ for i in range(runs):
 
 # pd.set_option('display.colhedaer)
 df_t=df.transpose()
-print(df_t)
+# print(df_t)
 df_t.to_csv('tab.csv',sep='\t')
 
 proc=subprocess.Popen(['cat','tab.csv'],stdout=subprocess.PIPE)
@@ -146,7 +146,7 @@ out=proc.communicate()
 out=out[0].decode('utf-8')
 print(out)
 
-os.remove('tab.csv')
+# os.remove('tab.csv')
 
 
 
