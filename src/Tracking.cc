@@ -730,8 +730,10 @@ namespace ORB_SLAM2
                 mapCallback(msg);
         }
 
+
         // Edge-SLAM: scope the locks
         {
+        bool bok_copy = false;
             // Edge-SLAM: we also use this lock when a map update is received from the server. Check mapCallback() function
             // Get Map Mutex -> Map cannot be changed
             unique_lock<mutex> lock(mpMap->mMutexMapUpdate);
@@ -957,6 +959,7 @@ namespace ORB_SLAM2
                 }
 
                 mLastFrame = Frame(mCurrentFrame);
+                bok_copy=bOK;
             }
 
             // Store frame pose information to retrieve the complete camera trajectory afterwards.
@@ -979,28 +982,35 @@ namespace ORB_SLAM2
 
             // Edge-SLAM: debug
             cout << "log,Tracking::Track,end process frame " << mCurrentFrame.mnId << endl;
-            if (mCurrentFrame.mnId > 275) {
-                if (slamMode == "NORMAL") {
-                    // ofstream f;
-                    // f.open("myLogs_Tracking.txt", std::ios::app);
-                    // f << "-------------START PRE-SYNCHRONIZATION at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
-                    // f.close();
-                    msg_queue.enqueue("PRE-SYNC");
-                    slamMode = "S-START";
-                }
-            }
+            // if (mCurrentFrame.mnId > 275) {
+            //     if (slamMode == "NORMAL") {
+            //         // ofstream f;
+            //         // f.open("myLogs_Tracking.txt", std::ios::app);
+            //         // f << "-------------START PRE-SYNCHRONIZATION at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
+            //         // f.close();
+            //         msg_queue.enqueue("PRE-SYNC");
+            //         slamMode = "S-START";
+            //     }
+            // }
             
-            if (mCurrentFrame.mnId > 375) {
-                if (slamMode == "S-START") {
-                    // ofstream f;
-                    // f.open("myLogs_Tracking.txt", std::ios::app);
-                    // f << "-------------HANDOVER FROM ONE EDGE TO ANOTHER at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
-                    // f.close();
+            if (mCurrentFrame.mnId > 375 & edgeNumber!=2) {
                     edgeNumber = 2; 
                     msg_queue.enqueue("HANDOVER");
                     msg_queue.enqueue("TERMINATE");
-                    slamMode = "H-START";
-                }
+                    cout<<"slamMode: "<<slamMode<<endl;
+                    cout<<"HERE"<<endl;
+                
+                    if (!bok_copy){
+                        cout<<"TRACKING LOST BEFORE HANDOVER"<<endl;
+                    }
+                // if (slamMode == "S-START") {
+
+                //     // ofstream f;
+                //     // f.open("myLogs_Tracking.txt", std::ios::app);
+                //     // f << "-------------HANDOVER FROM ONE EDGE TO ANOTHER at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
+                //     // f.close();
+                //     slamMode = "H-START";
+                // }
             }
 
             cout << "Number of frames in MAP:" << mpMap->KeyFramesInMap() << endl;

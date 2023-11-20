@@ -7,6 +7,9 @@ import re
 import pandas as pd
 import time
 
+global track_lost
+track_lost=False
+
 def server(port,event,server='server'):
     print("Server started")
     args=["./stereo_kitti" ,'../../Vocabulary/ORBvoc.txt' ,'KITTI00-02.yaml' ,server]
@@ -29,6 +32,20 @@ def server(port,event,server='server'):
     event.wait()
     print('signal sent1')
     child_process.send_signal(signal.SIGINT)
+    # out=child_process.stdout.readlines()
+    # out=[i.decode('utf-8') for i in out]
+    # print('printing out')
+    # # print(out)
+    # print(server)
+    # for i in out:
+    #     print(i[:-1])
+    # for i in out:
+    #     if 'TRACKING LOST BEFORE HANDOVER' in i:
+    #         print('fount',i)
+    #         global track_lost
+    #         track_lost=True
+    #         break
+
     child_process.wait()
     print('signal sent2')
 
@@ -36,11 +53,27 @@ def client(port,dataset,event):
     print("client started")
     args=["./stereo_kitti" ,'../../Vocabulary/ORBvoc.txt' ,'KITTI00-02.yaml' ,'client',dataset]
     print('making subporcess')
-    child_process=subprocess.Popen(args,stdin=subprocess.PIPE)
+    child_process=subprocess.Popen(args,stdin=subprocess.PIPE,stdout=subprocess.PIPE)
     print('subprocess made')
     # inp='127.0.0.1'+'\n'+'127.0.0.1'+'\n'+str(port)+'\n'+str(port)+'\n'+str(port+1)+'\n'+str(port+1)+'\n'+str(port+2)+'\n'+str(port+2)+'\n'
     inp=str(port)+'\n'+'1\n'
-    child_process.communicate(input=bytes(inp,'utf-8'))
+    out,err=child_process.communicate(input=bytes(inp,'utf-8'))
+    out=out.decode('utf-8').split('\n')
+    for i in out:
+        print(i)
+        if "TRACKING LOST BEFORE HANDOVER" in i:
+            global track_lost
+            track_lost=True
+            break
+    # out=[i.decode('utf-8') for i in out]
+    # for i in out:
+    #     print(i[:-1])
+    #     if 'TRACKING LOST BEFORE HANDOVER' in i:
+    #         print('fount',i)
+    #         global track_lost
+    #         track_lost=True
+    #         break
+   
     child_process.wait()
     print('client finished')
     return
@@ -83,10 +116,38 @@ print(df)
 
 runs=int(sys.argv[4])
 
+proc=subprocess.Popen(['git','branch'])
+proc.wait()
+branch=input('enter branch name: ')
+
+gt=sys.argv[3].split('/')[-1]
+
+
+print('dataset',dataset)
+datasetl=dataset.split('/')[-3:-1]
+datasetl='/'.join(datasetl)
+
+
+time_text=time.strftime("%Y%m%d-%H%M%S")
+
+
+switch=input('swith frame:')
+sync=input('sync frame:')
+text_l=[f'branch\t{branch}',f'dataset\t{datasetl}',f'gt\t{gt}',f'runs\t{runs}',f'switch\t{switch}',f'sync\t{sync}',f'time\t{time_text}']
+
+
+dir='metadata'
+if not os.path.exists(dir):
+    os.makedirs(dir)
+
+run_count=0
+error_count=0
+track_b4=0
 # filename_csv=input('Enter filename for csv: ')
 
-for i in range(runs):
+while run_count<runs:
     
+    track_lost=False
 
     event=threading.Event()
     server_thread = threading.Thread(target=server, args=(portStart,event,))
@@ -126,25 +187,56 @@ for i in range(runs):
 
     evo_res=run_evo(gt,traj='KeyFrameTrajectory_TUM_Format_combined.txt')
     print('res',evo_res)
+    
+    if track_lost:
+        track_b4+=1
+
+    if(evo_res[0]=='error in evo'):
+        error_count+=1
+        print('ERROR IN EVO')
+        print(f'Run Count:\t{run_count}\n',f'Error Count:\t{error_count}\n',f'Track Lost Before Handover:\t{track_b4}\n')
+
+        portStart+=6
+        continue
+    run_count+=1
 
     # print(evo_res+[num])
     df.loc[-1]=evo_res+[num1,num2,num1+num2]
     df.index = df.index + 1
 
+    print(f'Run Count:\t{run_count}\n',f'Error Count:\t{error_count}\n',f'Track Lost Before Handover:\t{track_b4}\n')
+
     portStart+=6
 
     print(df)
 
-# pd.set_option('display.colhedaer)
-df_t=df.transpose()
-# print(df_t)
-df_t.to_csv('tab.csv',sep='\t')
 
-proc=subprocess.Popen(['cat','tab.csv'],stdout=subprocess.PIPE)
-out=proc.communicate()
-# print(out)
-out=out[0].decode('utf-8')
-print(out)
+dir='results'
+if not os.path.exists(dir):
+    os.makedirs(dir)
+
+df_t=df.transpose()
+df_t.to_csv(dir+'/'+time_text+'.csv',sep='\t')
+
+
+text_l+=[f'Run Count:\t{run_count}',f'Error Count:\t{error_count}',f'Track Lost Before Handover:\t{track_b4}']
+
+text_l=[i+'\n' for i in text_l]
+dir='metadata'
+if not os.path.exists(dir):
+    os.makedirs(dir)
+file=open(dir+'/'+time_text+'.txt','w')
+file.writelines(text_l)
+
+for i in text_l:
+    print(i[:-1])
+
+print('SAVED TO :',time_text+'.csv')
+
+dir='results'
+proc=subprocess.Popen(['cat',dir+'/'+time_text+'.csv'])
+
+proc.wait()
 
 # os.remove('tab.csv')
 
