@@ -715,6 +715,7 @@ namespace ORB_SLAM2
 
         // Edge-SLAM: scope the locks
         {
+            bool bok_copy=false;
             // Edge-SLAM: we also use this lock when a map update is received from the server. Check mapCallback() function
             // Get Map Mutex -> Map cannot be changed
             unique_lock<mutex> lock(mpMap->mMutexMapUpdate);
@@ -940,6 +941,8 @@ namespace ORB_SLAM2
                 }
 
                 mLastFrame = Frame(mCurrentFrame);
+
+                bok_copy=bOK;
             }
 
             // Store frame pose information to retrieve the complete camera trajectory afterwards.
@@ -963,10 +966,14 @@ namespace ORB_SLAM2
             // Edge-SLAM: debug
             cout << "log,Tracking::Track,end process frame " << mCurrentFrame.mnId << endl;
             if ((mCurrentFrame.mnId > 375) && (edgeNumber!=2)) {
-                ofstream f;
+                // ofstream f;
+                
                 // f.open("SwitchTime.txt");
                 // f << "-------------SWITCHING EDGES at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
                 // f.close();
+                if (!bok_copy){
+                    cout<<"TRACKING LOST BEFORE HANDOVER"<<endl;
+                }
                 edgeNumber = 2; 
             }
             cout << "Number of frames in MAP:" << mpMap->KeyFramesInMap() << endl;
