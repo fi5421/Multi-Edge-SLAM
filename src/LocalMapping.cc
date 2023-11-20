@@ -97,9 +97,20 @@ namespace ORB_SLAM2
         ip = "127.0.0.1";
 
         // Subset Tcp Connection
-        cout << "Enter subset Port Number\n";
-        getline(cin, subset_port);
-        cout << "Subset Port " << std::stoi(subset_port) << endl;
+        // cout << "Enter subset Port Number\n";
+        // getline(cin, subset_port);
+        // cout << "Subset Port " << std::stoi(subset_port) << endl;
+        cout << "Enter the port number used for keyframe connection: "<<edgeNumber<<endl;
+        getline(cin, port_number);
+        port_int = std::stoi(port_number);
+        if (edgeNumber==2)
+        {
+            subset_port = std::to_string(port_int - 2);
+        }else{
+            subset_port = std::to_string(port_int -1);
+        }
+        cout<<"Subset Port on "<<edgeNumber<<" "<<subset_port<<endl;
+
         if (edgeNumber == 1)
         {
             map_subset_socket = new TcpSocket(ip, std::stoi(subset_port));
@@ -117,9 +128,6 @@ namespace ORB_SLAM2
         // map_subset_queue_send.enqueue("Temp Message");
 
         // Keyframe connection
-        cout << "Enter the port number used for keyframe connection: ";
-        getline(cin, port_number);
-        port_int = std::stoi(port_number);
 
         keyframe_socket = new TcpSocket(ip, std::stoi(port_number));
         keyframe_socket->waitForConnection();
@@ -143,7 +151,7 @@ namespace ORB_SLAM2
 
         mnLastKeyFrameId = 0;
 
-        cout << "log,LocalMapping::LocalMapping,done" << endl;
+        cout << "log,LocalMapping::LocalMapping,done on edge: "<<edgeNumber << endl;
     }
 
     // Edge-SLAM

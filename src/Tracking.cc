@@ -183,8 +183,8 @@ namespace ORB_SLAM2
         // cin >> edgeNumber;
         edgeNumber=1;
         cout << "Edge Selected: " << edgeNumber << endl;
-        cin.clear();
-        cin.ignore();
+        // cin.clear();
+        // cin.ignore();
         int *edgeNumberPointer = &edgeNumber;
         // cout<<std::format("KeyFrame Connection port Edge1 {} Edge2 {}\n",port_number,port_number+1);
         int port_number = std::stoi(port);
@@ -207,7 +207,7 @@ namespace ORB_SLAM2
 
         port_number++;
         cout << "Keyframe thread created " << port_number << endl;
-        getline(cin, dummy);
+        // getline(cin, dummy);
         // cout<<std::format("Frame Connection port Edge1 {} Edge2 {}\n",port_number,port_number+1);
         cout << "Frame Connection port Edge1 " << port_number << " Edge2 " << port_number + 1 << endl;
 
@@ -225,7 +225,7 @@ namespace ORB_SLAM2
 
         port_number++;
         cout << "Frame thread created " << port_number << endl;
-        getline(cin, dummy);
+        // getline(cin, dummy);
         // cout<<std::format("Map Connection port Edge1 {} Edge2 {}\n",port_number,port_number+1);
         cout << "Map Connection port Edge1 " << port_number << " Edge2 " << port_number + 1 << endl;
 
@@ -716,6 +716,7 @@ namespace ORB_SLAM2
 
         // Edge-SLAM: scope the locks
         {
+            bool bok_copy=false;
             // Edge-SLAM: we also use this lock when a map update is received from the server. Check mapCallback() function
             // Get Map Mutex -> Map cannot be changed
             unique_lock<mutex> lock(mpMap->mMutexMapUpdate);
@@ -941,6 +942,7 @@ namespace ORB_SLAM2
                 }
 
                 mLastFrame = Frame(mCurrentFrame);
+                bok_copy=bOK;
             }
 
             // Store frame pose information to retrieve the complete camera trajectory afterwards.
@@ -980,9 +982,14 @@ namespace ORB_SLAM2
 
             if (mCurrentFrame.mnId > switch_frame && sync_mode != 0)
             {
-                // edgeNumber=2;
+                if(!bok_copy){
+                    cout<<"TRACKING LOST BEFORE HANDOVER"<<endl;
+                }
+
+                cout<<"SWITCHING HERE\n";
+                edgeNumber=2;
                 sync_mode = 0;
-                // frame_queue.enqueue("Active Edge");
+                frame_queue.enqueue("Active Edge");
                 // send end sync end signal here
             }
 
