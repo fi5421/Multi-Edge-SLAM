@@ -982,23 +982,23 @@ namespace ORB_SLAM2
 
             // Edge-SLAM: debug
             cout << "log,Tracking::Track,end process frame " << mCurrentFrame.mnId << endl;
-            // if (mCurrentFrame.mnId > 275) {
-            //     if (slamMode == "NORMAL") {
-            //         // ofstream f;
-            //         // f.open("myLogs_Tracking.txt", std::ios::app);
-            //         // f << "-------------START PRE-SYNCHRONIZATION at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
-            //         // f.close();
-            //         msg_queue.enqueue("PRE-SYNC");
-            //         slamMode = "S-START";
-            //     }
-            // }
+            if (mCurrentFrame.mnId > 275) {
+                if (slamMode == "NORMAL") {
+                    // ofstream f;
+                    // f.open("myLogs_Tracking.txt", std::ios::app);
+                    // f << "-------------START PRE-SYNCHRONIZATION at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
+                    // f.close();
+                    msg_queue.enqueue("PRE-SYNC");
+                    slamMode = "S-START";
+                }
+            }
             
             if (mCurrentFrame.mnId > 375 & edgeNumber!=2) {
                     edgeNumber = 2; 
                     msg_queue.enqueue("HANDOVER");
                     msg_queue.enqueue("TERMINATE");
                     cout<<"slamMode: "<<slamMode<<endl;
-                    cout<<"HERE"<<endl;
+                    cout<<"Switching HERE"<<endl;
                 
                     if (!bok_copy){
                         cout<<"TRACKING LOST BEFORE HANDOVER"<<endl;
