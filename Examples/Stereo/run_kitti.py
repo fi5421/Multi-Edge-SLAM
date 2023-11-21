@@ -6,6 +6,7 @@ import signal
 import re
 import pandas as pd
 import time
+import shutil
 
 global track_lost
 track_lost=False
@@ -15,11 +16,17 @@ def server(port,event,server='server'):
     args=["./stereo_kitti" ,'../../Vocabulary/ORBvoc.txt' ,'KITTI00-02.yaml' ,server]
     child_process=subprocess.Popen(args,stdin=subprocess.PIPE)
     inp='127.0.0.1\n'+str(port)+'\n'+str(port+1)+'\n'+str(port+2)+'\n'
-    input=['127.0.0.1\n',str(port)+'\n',str(port+1)+'\n',str(port+2)+'\n']
+
+    subset_port=port-1
+    if(server=='server2'):
+        subset_port=port-2
+    input=['127.0.0.1\n',str(port)+'\n',str(port+1)+'\n',str(port+2)+'\n',str(port-1),str(subset_port)+'\n']
     count=0
     # print('writing',input[0])
     # child_process.stdin.write(bytes(input[0],'utf-8'))
+    # print('writing',str(subset_port)+'\n'+input[1])/
     print('writing',input[1])
+    # child_process.stdin.write(bytes(input[-1],'utf-8'))
     child_process.stdin.write(bytes(input[1],'utf-8'))
     # print('writing',input[2])
     # child_process.stdin.write(bytes(input[2],'utf-8'))
@@ -56,7 +63,7 @@ def client(port,dataset,event):
     child_process=subprocess.Popen(args,stdin=subprocess.PIPE,stdout=subprocess.PIPE)
     print('subprocess made')
     # inp='127.0.0.1'+'\n'+'127.0.0.1'+'\n'+str(port)+'\n'+str(port)+'\n'+str(port+1)+'\n'+str(port+1)+'\n'+str(port+2)+'\n'+str(port+2)+'\n'
-    inp=str(port)+'\n'+'1\n'
+    inp=str(port)+'\n'#+'1\n'
     out,err=child_process.communicate(input=bytes(inp,'utf-8'))
     out=out.decode('utf-8').split('\n')
     for i in out:
@@ -143,6 +150,15 @@ if not os.path.exists(dir):
 run_count=0
 error_count=0
 track_b4=0
+
+
+dir='results/'+time_text+'/'
+if not os.path.exists(dir):
+    os.makedirs(dir)
+
+dir_traj=dir+'traj/'
+if not os.path.exists(dir_traj):
+    os.makedirs(dir_traj)
 # filename_csv=input('Enter filename for csv: ')
 
 while run_count<runs:
@@ -152,11 +168,13 @@ while run_count<runs:
     event=threading.Event()
     server_thread = threading.Thread(target=server, args=(portStart,event,))
     server_thread.start()
+    
+    time.sleep(1)
 
     server2_thread = threading.Thread(target=server, args=(portStart+1,event,'server2'))
     server2_thread.start()
 
-    time.sleep(1)
+    time.sleep(5)
 
     client_thread = threading.Thread(target=client, args=(portStart,dataset,event,))
     client_thread.start()
@@ -185,9 +203,23 @@ while run_count<runs:
     file.writelines(lines1+lines2)
     file.close()
 
-    evo_res=run_evo(gt,traj='KeyFrameTrajectory_TUM_Format_combined.txt')
-    print('res',evo_res)
+    traj_path=f"{dir_traj}{run_count}"
+
+    if not os.path.exists(traj_path):
+        os.makedirs(traj_path)
+    print(traj_path)
+
+    shutil.copy('KeyFrameTrajectory_TUM_Format1.txt',f"{traj_path}/KeyFrameTrajectory_TUM_Format1.txt")
+    shutil.copy('KeyFrameTrajectory_TUM_Format2.txt',f"{traj_path}/KeyFrameTrajectory_TUM_Format2.txt")
+    shutil.copy('KeyFrameTrajectory_TUM_Format_combined.txt',f"{traj_path}/KeyFrameTrajectory_TUM_Format_combined.txt")
+
+    try:
+        evo_res=run_evo(gt,traj='KeyFrameTrajectory_TUM_Format_combined.txt')
+        print('res',evo_res)
+    except:
+        evo_res=['error in evo' for i in range(8)]
     
+
     if track_lost:
         track_b4+=1
 
@@ -196,7 +228,7 @@ while run_count<runs:
         print('ERROR IN EVO')
         print(f'Run Count:\t{run_count}\n',f'Error Count:\t{error_count}\n',f'Track Lost Before Handover:\t{track_b4}\n')
 
-        portStart+=6
+        portStart+=10
         continue
     run_count+=1
 
@@ -206,14 +238,11 @@ while run_count<runs:
 
     print(f'Run Count:\t{run_count}\n',f'Error Count:\t{error_count}\n',f'Track Lost Before Handover:\t{track_b4}\n')
 
-    portStart+=6
+    portStart+=10
 
     print(df)
 
 
-dir='results'
-if not os.path.exists(dir):
-    os.makedirs(dir)
 
 df_t=df.transpose()
 df_t.to_csv(dir+'/'+time_text+'.csv',sep='\t')
@@ -222,7 +251,7 @@ df_t.to_csv(dir+'/'+time_text+'.csv',sep='\t')
 text_l+=[f'Run Count:\t{run_count}',f'Error Count:\t{error_count}',f'Track Lost Before Handover:\t{track_b4}']
 
 text_l=[i+'\n' for i in text_l]
-dir='metadata'
+# dir='metadata'
 if not os.path.exists(dir):
     os.makedirs(dir)
 file=open(dir+'/'+time_text+'.txt','w')
