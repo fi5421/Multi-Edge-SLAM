@@ -6,6 +6,7 @@ import signal
 import re
 import pandas as pd
 import time
+import shutil
 
 global track_lost
 track_lost=False
@@ -148,6 +149,15 @@ if not os.path.exists(dir):
 run_count=0
 error_count=0
 track_b4=0
+
+
+dir='results/'+time_text+'/'
+if not os.path.exists(dir):
+    os.makedirs(dir)
+
+dir_traj=dir+'traj/'
+if not os.path.exists(dir_traj):
+    os.makedirs(dir_traj)
 # filename_csv=input('Enter filename for csv: ')
 
 while run_count<runs:
@@ -157,11 +167,13 @@ while run_count<runs:
     event=threading.Event()
     server_thread = threading.Thread(target=server, args=(portStart,event,))
     server_thread.start()
+    
+    time.sleep(1)
 
     server2_thread = threading.Thread(target=server, args=(portStart+1,event,'server2'))
     server2_thread.start()
 
-    time.sleep(4)
+    time.sleep(5)
 
     client_thread = threading.Thread(target=client, args=(portStart,dataset,event,))
     client_thread.start()
@@ -189,6 +201,16 @@ while run_count<runs:
     file=open('KeyFrameTrajectory_TUM_Format_combined.txt','w')
     file.writelines(lines1+lines2)
     file.close()
+
+    traj_path=f"{dir_traj}{run_count}"
+
+    if not os.path.exists(traj_path):
+        os.makedirs(traj_path)
+    print(traj_path)
+
+    shutil.copy('KeyFrameTrajectory_TUM_Format1.txt',f"{traj_path}/KeyFrameTrajectory_TUM_Format1.txt")
+    shutil.copy('KeyFrameTrajectory_TUM_Format2.txt',f"{traj_path}/KeyFrameTrajectory_TUM_Format2.txt")
+    shutil.copy('KeyFrameTrajectory_TUM_Format_combined.txt',f"{traj_path}/KeyFrameTrajectory_TUM_Format_combined.txt")
 
     try:
         evo_res=run_evo(gt,traj='KeyFrameTrajectory_TUM_Format_combined.txt')
@@ -220,9 +242,6 @@ while run_count<runs:
     print(df)
 
 
-dir='results'
-if not os.path.exists(dir):
-    os.makedirs(dir)
 
 df_t=df.transpose()
 df_t.to_csv(dir+'/'+time_text+'.csv',sep='\t')
@@ -231,7 +250,7 @@ df_t.to_csv(dir+'/'+time_text+'.csv',sep='\t')
 text_l+=[f'Run Count:\t{run_count}',f'Error Count:\t{error_count}',f'Track Lost Before Handover:\t{track_b4}']
 
 text_l=[i+'\n' for i in text_l]
-dir='metadata'
+# dir='metadata'
 if not os.path.exists(dir):
     os.makedirs(dir)
 file=open(dir+'/'+time_text+'.txt','w')
