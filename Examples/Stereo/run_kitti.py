@@ -63,7 +63,7 @@ def client(port,dataset,event):
     child_process=subprocess.Popen(args,stdin=subprocess.PIPE,stdout=subprocess.PIPE)
     print('subprocess made')
     # inp='127.0.0.1'+'\n'+'127.0.0.1'+'\n'+str(port)+'\n'+str(port)+'\n'+str(port+1)+'\n'+str(port+1)+'\n'+str(port+2)+'\n'+str(port+2)+'\n'
-    inp=str(port)+'\n'#+'1\n'
+    inp=str(port)+'\n'+'1\n'
     out,err=child_process.communicate(input=bytes(inp,'utf-8'))
     out=out.decode('utf-8').split('\n')
     for i in out:
