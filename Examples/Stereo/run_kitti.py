@@ -24,7 +24,7 @@ def server(port,event,server='server'):
     count=0
     # print('writing',input[0])
     # child_process.stdin.write(bytes(input[0],'utf-8'))
-    print('writing',str(subset_port)+'\n'+input[1])
+    print('writing',input[1])
     # child_process.stdin.write(bytes(input[-1],'utf-8'))
     child_process.stdin.write(bytes(input[1],'utf-8'))
     # print('writing',input[2])
