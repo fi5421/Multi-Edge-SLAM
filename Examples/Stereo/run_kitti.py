@@ -7,9 +7,105 @@ import re
 import pandas as pd
 import time
 import shutil
+import matplotlib.pyplot as plt
 
 global track_lost
 track_lost=False
+
+
+def plotKeyFrameGeneration(resultsPath, groundtruthPath):
+    # Reading groundtruth
+    groundtruth = pd.read_csv(groundtruthPath, delim_whitespace=True, header=None)
+
+    # Reading configuraiton parameters
+    config = pd.read_csv(f'results/{resultsPath}/{resultsPath}.txt', delimiter='\t', index_col=0, header=None)
+    syncFrame = config.iloc[5][1]
+    switchFrame = config.iloc[4][1]
+
+    # Experiemnt can either involve both state migration and handover, just handover or neither
+    if syncFrame == "No" and switchFrame == "No":
+        syncTimestamp = -1
+        handoverTimestamp = -1
+    elif syncFrame == "No" and switchFrame != "No":
+        syncTimestamp = -1
+        handoverTimestamp = groundtruth.iloc[int(switchFrame)-1, 0]
+    else:
+        syncTimestamp = groundtruth.iloc[int(syncFrame)-1, 0]
+        handoverTimestamp = groundtruth.iloc[int(switchFrame)-1, 0]
+
+    # Average KeyFrame Generation
+    trajectories = []
+    maxSeenTimestamp = 0
+
+    # Finding largest seen timestamp across all trajectories
+    for root, dirs, files in os.walk(f'results/{resultsPath}/traj'):
+        for file in files:
+            if file.endswith(".txt"):
+                file_path = os.path.join(root, file)
+
+                trajectory = (pd.read_csv(file_path, sep='\s+', header=None)).iloc[:, 0]
+                trajectory = trajectory - trajectory[0]     # normalizing by offsetting from first timestamp
+                trajectory = trajectory.astype(int)         # truncating decimal
+                trajectory = trajectory.sort_values()
+                trajectories.append(trajectory)
+
+                # Calculating metadata
+                keyFrameGeneration = trajectory.value_counts().sort_index()
+                timestamps = [value for value, count in keyFrameGeneration.items() for _ in range(count)]             
+                timeTaken = max(timestamps)
+
+                if timeTaken > maxSeenTimestamp:
+                    maxSeenTimestamp = timeTaken
+
+    # Computing average distribution across all trajectories
+    firstIteration = True
+    for trajectory in trajectories:
+        keyFrameGeneration = trajectory.value_counts().sort_index()
+        keyFrameGeneration = keyFrameGeneration.reindex(range(maxSeenTimestamp + 2), fill_value=0)
+        if firstIteration:
+            avg_keyFrameGeneration = keyFrameGeneration
+            firstIteration = False
+        else:
+            avg_keyFrameGeneration = avg_keyFrameGeneration + keyFrameGeneration
+            avg_keyFrameGeneration = avg_keyFrameGeneration/2
+
+    # Normalizing sync and handover timestamps by offsetting from first timestamp
+    handoverTimestamp = handoverTimestamp - trajectories[0][0]
+    syncTimestamp = syncTimestamp - trajectories[0][0]
+    
+    # Dynamically scalable plot
+    peakGeneration = max(avg_keyFrameGeneration)    # maximum keyFrames generated in a second
+    plt.figure(figsize=((0.25*maxSeenTimestamp), peakGeneration))
+    
+    # Plotting KeyFrame Generation across Time
+    plt.bar(avg_keyFrameGeneration.index, avg_keyFrameGeneration.values, color='black', width=1)
+
+    # Plotting State Migration Region (if any)
+    if syncTimestamp == -1 and handoverTimestamp == -1:
+        pass
+    elif syncTimestamp == -1 and handoverTimestamp != -1:
+        plt.axvline(x=handoverTimestamp, color='red', linestyle='--', linewidth=2, label='Handover (No State Migration)')
+        plt.legend()
+    else:
+        plt.axvline(x=syncTimestamp, color='blue', linestyle='--', linewidth=2, label='Start Sync Protocol')
+        plt.axvline(x=handoverTimestamp, color='red', linestyle='--', linewidth=2, label='Stop Sync and Handover')
+        plt.axvspan(syncTimestamp, handoverTimestamp, color='green', alpha=0.3, label='State Migration Region')
+        plt.legend()
+
+    # Set labels and title
+    plt.xlabel('Time (seconds)')
+    plt.ylabel('Average Number of KeyFrames Generated')
+    plt.title('Average KeyFrame Generation Across Time')
+
+    # Customizing  appearance
+    plt.grid(axis='y', linestyle='--')
+    plt.xticks(keyFrameGeneration.index)
+    plt.tight_layout()
+    
+    # Saving plot
+    figFilename = resultsPath.replace('.txt', '') + '.png'
+    plt.savefig(os.path.join(f'results/{resultsPath}', figFilename))
+
 
 def server(port,event,server='server'):
     print("Server started")
@@ -110,6 +206,16 @@ def run_evo(gt,traj='KeyFrameTrajectory_TUM_Format1.txt'):
             out[i]=0
     # print(out[-7:])
     return out[-7:]+[num_pose]
+
+
+
+
+
+
+
+
+
+
 
 if len(sys.argv) != 5:
     print("Usage: python run_kitti.py <dataset> <portStart> <gt> <run_times>")
@@ -257,17 +363,22 @@ if not os.path.exists(dir):
     os.makedirs(dir)
 file=open(dir+'/'+time_text+'.txt','w')
 file.writelines(text_l)
+file.close()
 
 for i in text_l:
     print(i[:-1])
 
 print('SAVED TO :',time_text+'.csv')
 
+print(time_text)
+print(gt)
+
+
 dir='results'
 proc=subprocess.Popen(['cat',dir+'/'+time_text+'.csv'])
 
 proc.wait()
-
+plotKeyFrameGeneration(time_text, gt)
 # os.remove('tab.csv')
 
 

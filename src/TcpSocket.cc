@@ -7,6 +7,9 @@
 //
 #include "TcpSocket.h"
 
+const int BANDWIDTH = 1024 * 1024;   // Bytes
+const int LATENCY = 10;              // Miliseconds
+
 // Empty constructor
 TcpSocket::TcpSocket(){}
 
@@ -246,26 +249,27 @@ void TcpSocket::reconnect()
  */
 int TcpSocket::sendMessage(std::string& message)
 {
-    std::cout<<"TcpSocket::sendMessage.\n";
+    std::cout<<"TCPSOCKET::sendMessage.\n";
 
     // Send message size
     unsigned int messageLen = message.size();
-    std::cout<<"TcpSocket::sendMessage: Message length: "<<messageLen<<"\n";
+    std::cout<<"TCPSOCKET::sendMessage: Message length: "<<messageLen<<"\n";
+    std::this_thread::sleep_for(std::chrono::milliseconds(LATENCY));
     if(!(send(this->socketHandle, &messageLen, sizeof(unsigned int), MSG_NOSIGNAL) == sizeof(unsigned int)))
     {
-        std::cout<<"TcpSocket::sendMessage: Incorrect send size. Reattempting to connect.\n";
+        std::cout<<"TCPSOCKET::sendMessage: Incorrect send size. Reattempting to connect.\n";
         this->reconnect();
         return 0;
     }
 
     // Receive ack
     {
-        std::cout<<"TcpSocket::sendMessage: Waiting for first acknowledgement.\n";
+        std::cout<<"TCPSOCKET::sendMessage: Waiting for first acknowledgement.\n";
         char buf[128];
         memset(buf,0,128);
         if(recv(this->socketHandle, buf, 128, 0) != 2)
         {
-            std::cout<<"TcpSocket::sendMessage: Incorrect acknowledgement received. Reattempting to reconnect.\n";
+            std::cout<<"TCPSOCKET::sendMessage: Incorrect acknowledgement received. Reattempting to reconnect.\n";
             this->reconnect();
             return 0;
         }
@@ -273,24 +277,29 @@ int TcpSocket::sendMessage(std::string& message)
 
     // Send message
     int offset = 0;
-    unsigned int payloadSize = 1024;
+    unsigned int payloadSize = BANDWIDTH;
     while(messageLen > payloadSize)
     {
+        std::this_thread::sleep_for(std::chrono::milliseconds(LATENCY));
         if(!(send(this->socketHandle, (&message[0]) + offset, payloadSize, MSG_NOSIGNAL) == payloadSize))
         {
-            std::cout<<"TcpSocket::sendMessage: Incorrect send size. Reattempting to connect.\n";
+            std::cout<<"TCPSOCKET::sendMessage: Incorrect send size. Reattempting to connect.\n";
             this->reconnect();
             return 0;
         }
+        
+        
+
         offset += payloadSize;
         messageLen -= payloadSize;
     }
 
     if(messageLen > 0)
     {
+        std::this_thread::sleep_for(std::chrono::milliseconds(LATENCY));
         if(!(send(this->socketHandle, (&message[0]) + offset, messageLen, MSG_NOSIGNAL) == messageLen))
         {
-            std::cout<<"TcpSocket::sendMessage: Incorrect send size. Reattempting to connect.\n";
+            std::cout<<"TCPSOCKET::sendMessage: Incorrect send size. Reattempting to connect.\n";
             this->reconnect();
             return 0;
         }
@@ -298,18 +307,18 @@ int TcpSocket::sendMessage(std::string& message)
 
     // Receive ack
     {
-        std::cout<<"TcpSocket::sendMessage: Waiting for second acknowledgement.\n";
+        std::cout<<"TCPSOCKET::sendMessage: Waiting for second acknowledgement.\n";
         char buf[128];
         memset(buf,0,128);
         if(recv(this->socketHandle, buf, 128, 0) != 2)
         {
-            std::cout<<"TcpSocket::sendMessage: Incorrect acknowledgement received. Reattempting to reconnect.\n";
+            std::cout<<"TCPSOCKET::sendMessage: Incorrect acknowledgement received. Reattempting to reconnect.\n";
             this->reconnect();
             return 0;
         }
     }
 
-    std::cout<<"TcpSocket::sendMessage: Data sent succesfully.\n";
+    std::cout<<"TCPSOCKET::sendMessage: Data sent succesfully.\n";
     return 1;
 }
 
