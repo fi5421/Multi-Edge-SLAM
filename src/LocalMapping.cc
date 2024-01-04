@@ -100,16 +100,18 @@ namespace ORB_SLAM2
         // cout << "Enter subset Port Number\n";
         // getline(cin, subset_port);
         // cout << "Subset Port " << std::stoi(subset_port) << endl;
-        cout << "Enter the port number used for keyframe connection: "<<edgeNumber<<endl;
+        cout << "Enter the port number used for keyframe connection: " << edgeNumber << endl;
         getline(cin, port_number);
         port_int = std::stoi(port_number);
-        if (edgeNumber==2)
+        if (edgeNumber == 2)
         {
             subset_port = std::to_string(port_int - 2);
-        }else{
-            subset_port = std::to_string(port_int -1);
         }
-        cout<<"Subset Port on "<<edgeNumber<<" "<<subset_port<<endl;
+        else
+        {
+            subset_port = std::to_string(port_int - 1);
+        }
+        cout << "Subset Port on " << edgeNumber << " " << subset_port << endl;
 
         if (edgeNumber == 1)
         {
@@ -151,7 +153,7 @@ namespace ORB_SLAM2
 
         mnLastKeyFrameId = 0;
 
-        cout << "log,LocalMapping::LocalMapping,done on edge: "<<edgeNumber << endl;
+        cout << "log,LocalMapping::LocalMapping,done on edge: " << edgeNumber << endl;
     }
 
     // Edge-SLAM
@@ -333,7 +335,7 @@ namespace ORB_SLAM2
         if (mpMap->KeyFramesInMap() == 0)
         {
             tKF->ChangeParent(NULL);
-            LastKeyFrameInSubset=tKF->mnId;
+            LastKeyFrameInSubset = tKF->mnId;
         }
 
         vector<MapPoint *> vpMapPointMatches = tKF->GetMapPointMatches();
@@ -538,28 +540,28 @@ namespace ORB_SLAM2
                             cout << "Sync: " << sync << endl;
                             cout << "KeyFrames in Map after sync: " << mpMap->KeyFramesInMap() << endl;
                             vector<KeyFrame *> current_local_map = mpMap->GetAllKeyFrames();
-                            
+
                             for (vector<KeyFrame *>::iterator mit = current_local_map.begin(); mit != current_local_map.end(); mit++)
                             {
                                 KeyFrame *tKF = *mit;
-                                KeyFrame *ptKF=mpMap->RetrieveKeyFrame(tKF->GetParent_int());
+                                KeyFrame *ptKF = mpMap->RetrieveKeyFrame(tKF->GetParent_int());
                                 tKF->ChangeParent(ptKF);
                             }
 
                             for (vector<KeyFrame *>::iterator mit = current_local_map.begin(); mit != current_local_map.end(); mit++)
                             {
                                 KeyFrame *tKF = *mit;
-                                cout << "KeyFrame " << tKF->mnId<<" has Parent "<<tKF->GetParent_int();
+                                cout << "KeyFrame " << tKF->mnId << " has Parent " << tKF->GetParent_int();
                                 KeyFrame *ptKF = tKF->GetParent();
-                                if(ptKF){
-                                    cout<<" has Parent in map: "<<ptKF->mnId<<endl;
-
-                                }else{
-                                    cout<<" has no Parent in map \n";
+                                if (ptKF)
+                                {
+                                    cout << " has Parent in map: " << ptKF->mnId << endl;
                                 }
-                                
+                                else
+                                {
+                                    cout << " has no Parent in map \n";
+                                }
                             }
-                           
                         }
                         else if (msg == "Active Edge")
                         {
@@ -599,7 +601,15 @@ namespace ORB_SLAM2
                         cout << "Message on Frame Socket " << msg << endl;
                         if (msg == "Start Sync")
                         {
+                            sync1=true;
                             startSync();
+                        }else if (msg == "Edge 1 End Sync")
+                        {
+                            map_subset_queue_send.enqueue("End Sync");
+                            sync1=false;
+                            activeEdge=false;
+                            continue;
+                            
                         }
                     }
                     else
@@ -637,10 +647,10 @@ namespace ORB_SLAM2
 
                 if (!CheckNewKeyFrames())
                 {
-                    if (edgeNumber == 2)
-                    {
-                        cout << "log,LocalMapping::Run, 3.1\n";
-                    }
+                    // if (edgeNumber == 2)
+                    // {
+                    //     cout << "log,LocalMapping::Run, 3.1\n";
+                    // }
 
                     // Find more matches in neighbor keyframes and fuse point duplications
                     try
@@ -649,50 +659,52 @@ namespace ORB_SLAM2
                     }
                     catch (const std::runtime_error &ex)
                     {
+                        
                         cout << ex.what() << endl;
+                        cout<<"ERROR ERROR!!!\n";
                     }
                     // cout<<"log,LocalMapping::Run, 3.2\n";
                 }
-                if (edgeNumber == 2)
-                {
-                    cout << "log,LocalMapping::Run, 4\n";
-                }
+                // if (edgeNumber == 2)
+                // {
+                //     cout << "log,LocalMapping::Run, 4\n";
+                // }
 
                 mbAbortBA = false;
 
                 if (!CheckNewKeyFrames() && !stopRequested())
                 {
                     // Local BA
-                    if (edgeNumber == 2)
-                    {
-                        cout << "log,LocalMapping::Run, 4.1\n";
-                    }
+                    // if (edgeNumber == 2)
+                    // {
+                    //     cout << "log,LocalMapping::Run, 4.1\n";
+                    // }
                     if (mpMap->KeyFramesInMap() > 2)
                     {
-                        if (edgeNumber == 2)
-                        {
-                            cout << "log,LocalMapping::Run, 4.2\n";
-                        }
+                        // if (edgeNumber == 2)
+                        // {
+                        //     cout << "log,LocalMapping::Run, 4.2\n";
+                        // }
                         if (activeEdge)
                         {
                             Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame, &mbAbortBA, mpMap);
                         }
                     }
-                    if (edgeNumber == 2)
-                    {
-                        cout << "log,LocalMapping::Run, 4.3\n";
-                    }
+                    // if (edgeNumber == 2)
+                    // {
+                    //     cout << "log,LocalMapping::Run, 4.3\n";
+                    // }
                     // Check redundant local Keyframes
                     KeyFrameCulling();
-                    if (edgeNumber == 2)
-                    {
-                        cout << "log,LocalMapping::Run, 4.4\n";
-                    }
+                    // if (edgeNumber == 2)
+                    // {
+                    //     cout << "log,LocalMapping::Run, 4.4\n";
+                    // }
                 }
-                if (edgeNumber == 2)
-                {
-                    cout << "log,LocalMapping::Run, 5\n";
-                }
+                // if (edgeNumber == 2)
+                // {
+                //     cout << "log,LocalMapping::Run, 5\n";
+                // }
 
                 mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);
                 // cout<<"log,LocalMapping::Run, 1\n";
@@ -713,6 +725,14 @@ namespace ORB_SLAM2
                     break;
                 }
             }
+
+            //sending subsequent
+
+            if(sync1){
+                sendSubsequent(mpCurrentKeyFrame->mnId);
+            }
+
+
 
             // Edge-SLAM: create and send local-map update
             // Edge-SLAM: added curly brackets (block) to limit measurement variables scope
@@ -873,7 +893,7 @@ namespace ORB_SLAM2
         // Update links in the Covisibility Graph
         if (edgeNumber == 2)
         {
-            mpCurrentKeyFrame->UpdateConnections(true);
+            mpCurrentKeyFrame->UpdateConnections(false);
         }
         else
         {
@@ -1186,10 +1206,8 @@ namespace ORB_SLAM2
             nn = 20;
         const vector<KeyFrame *> vpNeighKFs = mpCurrentKeyFrame->GetBestCovisibilityKeyFrames(nn);
         vector<KeyFrame *> vpTargetKFs;
-        if (edgeNumber == 2)
-        {
-            cout << "here 3.1.1\n";
-        }
+        // 
+        
         for (vector<KeyFrame *>::const_iterator vit = vpNeighKFs.begin(), vend = vpNeighKFs.end(); vit != vend; vit++)
         {
             KeyFrame *pKFi = *vit;
@@ -1208,10 +1226,10 @@ namespace ORB_SLAM2
                 vpTargetKFs.push_back(pKFi2);
             }
         }
-        if (edgeNumber == 2)
-        {
-            cout << "here 3.1.2\n";
-        }
+        // if (edgeNumber == 2)
+        // {
+        //     cout << "here 3.1.2\n";
+        // }
 
         // Search matches by projection from current KF in target KFs
         ORBmatcher matcher;
@@ -1223,10 +1241,10 @@ namespace ORB_SLAM2
             matcher.Fuse(pKFi, vpMapPointMatches);
         }
 
-        if (edgeNumber == 2)
-        {
-            cout << "here 3.1.3\n";
-        }
+        // if (edgeNumber == 2)
+        // {
+        //     cout << "here 3.1.3\n";
+        // }
 
         // Search matches by projection from target KFs in current KF
         vector<MapPoint *> vpFuseCandidates;
@@ -1250,22 +1268,22 @@ namespace ORB_SLAM2
             }
         }
 
-        if (edgeNumber == 2)
-        {
-            cout << "here 3.1.4\n";
-        }
+        // if (edgeNumber == 2)
+        // {
+        //     cout << "here 3.1.4\n";
+        // }
 
         matcher.Fuse(mpCurrentKeyFrame, vpFuseCandidates);
-        if (edgeNumber == 2)
-        {
-            cout << "here 3.1.4.1\n";
-        }
+        // if (edgeNumber == 2)
+        // {
+        //     cout << "here 3.1.4.1\n";
+        // }
         // Update points
         vpMapPointMatches = mpCurrentKeyFrame->GetMapPointMatches();
-        if (edgeNumber == 2)
-        {
-            cout << "here 3.1.4.2\n";
-        }
+        // if (edgeNumber == 2)
+        // {
+        //     cout << "here 3.1.4.2\n";
+        // }
 
         // Need to change this
         if (activeEdge)
@@ -1283,17 +1301,17 @@ namespace ORB_SLAM2
                 }
             }
         }
-        if (edgeNumber == 2)
-        {
-            cout << "here 3.1.5\n";
-        }
+        // if (edgeNumber == 2)
+        // {
+        //     cout << "here 3.1.5\n";
+        // }
 
         // Update connections in covisibility graph
         mpCurrentKeyFrame->UpdateConnections(false);
-        if (edgeNumber == 2)
-        {
-            cout << "here 3.1.6\n";
-        }
+        // if (edgeNumber == 2)
+        // {
+        //     cout << "here 3.1.6\n";
+        // }
     }
 
     cv::Mat LocalMapping::ComputeF12(KeyFrame *&pKF1, KeyFrame *&pKF2)
@@ -2014,6 +2032,10 @@ namespace ORB_SLAM2
 
             cout << "log,LocalMapping::startSync,keyframes Map Subset: ";
 
+            subsetTill = current_local_map[0]->mnId;
+
+            cout << "Subset Till: " << subsetTill << endl;
+
             // Iterate through all keyframes in map
             for (vector<KeyFrame *>::iterator mit = current_local_map.begin(); mit != current_local_map.end(); mit++)
             {
@@ -2074,6 +2096,10 @@ namespace ORB_SLAM2
             long unsigned count = 0;
             stack<long unsigned int> msLatestKFsId_copy = msLatestKFsId;
             // cout<<"Size of msLatestKFsId "<<msLatestKFsId_copy.size()<<endl;
+
+            subsetTill = msLatestKFsId_copy.top();
+            cout << "Subset Till2: " << subsetTill << endl;
+
             while ((count < localMapSize) && (msLatestKFsId_copy.size() > 0))
             {
                 KeyFrame *tKF = mpMap->RetrieveKeyFrame(msLatestKFsId_copy.top());
@@ -2162,7 +2188,8 @@ namespace ORB_SLAM2
 
         cout << "log,LocalMapping::startSync,subset Sent\n";
         // map_subset_queue_send.enqueue("Dummy");
-        map_subset_queue_send.enqueue("End Sync");
+
+        // map_subset_queue_send.enqueue("End Sync");
 
         // Clear relocalization vectors
         // usCandidateKFsId.clear();
@@ -2172,6 +2199,34 @@ namespace ORB_SLAM2
         // msNewKFFlag = false;
 
         // sync = 0;
+    }
+
+    void LocalMapping::sendSubsequent(int KF_Id)
+    {
+
+        if (subsetTill == -1)
+        {
+            return;
+        }
+        if (subsetTill >= KF_Id)
+        {
+            return;
+        }
+
+        KeyFrame *tKF = mpMap->RetrieveKeyFrame(KF_Id);
+        std::ostringstream os;
+        boost::archive::text_oarchive oa(os);
+        oa << tKF;
+        std::string msg;
+        msg = os.str();
+
+        map_subset_queue_send.enqueue(msg);
+
+        subsetTill=KF_Id;
+
+        cout<<"Local Mapping::sendSubsequent, sent KF: "<<KF_Id<<endl;        
+
+
     }
 
     // Edge-SLAM: receive function to be called on a separate thread

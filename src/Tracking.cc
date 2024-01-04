@@ -181,7 +181,7 @@ namespace ORB_SLAM2
         // cout << "Select Edge 1 or 2: ";
         // // int edgeNumber;
         // cin >> edgeNumber;
-        edgeNumber=1;
+        edgeNumber = 1;
         cout << "Edge Selected: " << edgeNumber << endl;
         // cin.clear();
         // cin.ignore();
@@ -716,7 +716,7 @@ namespace ORB_SLAM2
 
         // Edge-SLAM: scope the locks
         {
-            bool bok_copy=false;
+            bool bok_copy = false;
             // Edge-SLAM: we also use this lock when a map update is received from the server. Check mapCallback() function
             // Get Map Mutex -> Map cannot be changed
             unique_lock<mutex> lock(mpMap->mMutexMapUpdate);
@@ -942,7 +942,7 @@ namespace ORB_SLAM2
                 }
 
                 mLastFrame = Frame(mCurrentFrame);
-                bok_copy=bOK;
+                bok_copy = bOK;
             }
 
             // Store frame pose information to retrieve the complete camera trajectory afterwards.
@@ -975,19 +975,20 @@ namespace ORB_SLAM2
 
             if (mCurrentFrame.mnId > sync_start && sync_mode != 1 && mCurrentFrame.mnId < switch_frame)
             {
-                cout<<"SYNC SIGNAL SENT\n";
+                cout << "SYNC SIGNAL SENT\n";
                 frame_queue.enqueue("Start Sync");
                 sync_mode = 1;
             }
 
             if (mCurrentFrame.mnId > switch_frame && sync_mode != 0)
             {
-                if(!bok_copy){
-                    cout<<"TRACKING LOST BEFORE HANDOVER"<<endl;
+                if (!bok_copy)
+                {
+                    cout << "TRACKING LOST BEFORE HANDOVER" << endl;
                 }
 
-                cout<<"SWITCHING HERE\n";
-                edgeNumber=2;
+                cout << "SWITCHING HERE\n";
+                edgeNumber = 2;
                 sync_mode = 0;
                 frame_queue.enqueue("Active Edge");
                 // send end sync end signal here
@@ -2332,6 +2333,7 @@ namespace ORB_SLAM2
         // This is not a busy wait because wait_dequeue function is blocking
         do
         {
+
             if (*edgeNumber == 1)
             {
                 if (!socketObject->checkAlive())
@@ -2344,6 +2346,36 @@ namespace ORB_SLAM2
 
                 if (success)
                     messageQueue->wait_dequeue(msg);
+
+                if (msg.compare("Active Edge") == 0)
+                {
+                    std::string msg1 = "Edge 1 End Sync";
+                    if (socketObject->sendMessage(msg1) == 1)
+                    {
+                        success = true;
+                        msg.clear();
+
+                        // Edge-SLAM: debug
+                        cout << "log,Tracking::tcp_send,sent " << name << endl;
+                    }
+                    else
+                    {
+                        success = false;
+                    }
+                    if (nextEdgeSocket->sendMessage(msg) == 1)
+                    {
+                        success = true;
+                        msg.clear();
+
+                        // Edge-SLAM: debug
+                        cout << "log,Tracking::tcp_send,sent " << name << endl;
+                    }
+                    else
+                    {
+                        success = false;
+                    }
+                    continue;
+                }
 
                 if ((!msg.empty()) && (msg.compare("exit") != 0))
                 {
@@ -2373,6 +2405,36 @@ namespace ORB_SLAM2
 
                 if (success)
                     messageQueue->wait_dequeue(msg);
+
+                if (msg.compare("Active Edge") == 0)
+                {
+                    std::string msg1 = "Edge 1 End Sync";
+                    if (socketObject->sendMessage(msg1) == 1)
+                    {
+                        success = true;
+                        msg.clear();
+
+                        // Edge-SLAM: debug
+                        cout << "log,Tracking::tcp_send,sent " << name << endl;
+                    }
+                    else
+                    {
+                        success = false;
+                    }
+                    if (nextEdgeSocket->sendMessage(msg) == 1)
+                    {
+                        success = true;
+                        msg.clear();
+
+                        // Edge-SLAM: debug
+                        cout << "log,Tracking::tcp_send,sent " << name << endl;
+                    }
+                    else
+                    {
+                        success = false;
+                    }
+                    continue;
+                }
 
                 if ((!msg.empty()) && (msg.compare("exit") != 0))
                 {

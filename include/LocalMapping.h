@@ -96,10 +96,13 @@ public:
     void static tcp_send(moodycamel::BlockingConcurrentQueue<std::string>* messageQueue, TcpSocket* socketObject, std::string name);
 
     void startSync();
+    void sendSubsequent(int KF_Id);
     void ProcessSubset(std::string msg);
 
     bool sync=false;
     bool activeEdge=false;
+    int subsetTill=-1;
+    int sync1=false;
 
 protected:
     // Edge-SLAM: measure
