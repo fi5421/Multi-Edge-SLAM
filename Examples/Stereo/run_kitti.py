@@ -218,7 +218,7 @@ while run_count<runs:
 
 
     try:
-        evo_res=run_evo(gt,traj='KeyFrameTrajectory_TUM_Format_combined.txt')
+        evo_res=run_evo(gt,traj='KeyFrameTrajectory_TUM_Format2.txt')
         print('res',evo_res)
     except:
         evo_res=['error in evo' for i in range(8)]
