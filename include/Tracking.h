@@ -273,6 +273,7 @@ protected:
     TcpSocket* keyframe_socket2;
     TcpSocket* frame_socket2;
     TcpSocket* map_socket2;
+    TcpSocket* migration_socket2; //connected to next edge
 
     // Choosing edge to communicate
     int edgeNumber;

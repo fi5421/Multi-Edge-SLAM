@@ -181,7 +181,7 @@ namespace ORB_SLAM2
         // cout << "Select Edge 1 or 2: ";
         // // int edgeNumber;
         // cin >> edgeNumber;
-        edgeNumber=1;
+        edgeNumber = 1;
         cout << "Edge Selected: " << edgeNumber << endl;
         // cin.clear();
         // cin.ignore();
@@ -241,10 +241,13 @@ namespace ORB_SLAM2
 
         map_thread = new thread(&ORB_SLAM2::Tracking::tcp_receive, &map_queue, map_socket, 1, "map", map_socket2, edgeNumberPointer);
 
+        cout << "making migration thread\n";
         port_number++;
         migration_socket = new TcpSocket(ip, port_number, server_ip, port_number);
         migration_socket->sendConnectionRequest();
-        migration_thread= new thread(&ORB_SLAM2::Tracking::tcp_send, &migration_queue, migration_socket, "Migration", migration_socket, edgeNumberPointer);
+        migration_socket2 = new TcpSocket(ip, port_number, server_ip, port_number + 1);
+        migration_socket2->sendConnectionRequest();
+        migration_thread = new thread(&ORB_SLAM2::Tracking::tcp_send, &migration_queue, migration_socket, "migration", migration_socket2, edgeNumberPointer);
 
         // Edge-SLAM: debug
         cout << "log,Tracking::Tracking,done" << endl;
@@ -721,7 +724,7 @@ namespace ORB_SLAM2
 
         // Edge-SLAM: scope the locks
         {
-            bool bok_copy=false;
+            bool bok_copy = false;
             // Edge-SLAM: we also use this lock when a map update is received from the server. Check mapCallback() function
             // Get Map Mutex -> Map cannot be changed
             unique_lock<mutex> lock(mpMap->mMutexMapUpdate);
@@ -947,7 +950,7 @@ namespace ORB_SLAM2
                 }
 
                 mLastFrame = Frame(mCurrentFrame);
-                bok_copy=bOK;
+                bok_copy = bOK;
             }
 
             // Store frame pose information to retrieve the complete camera trajectory afterwards.
@@ -980,21 +983,25 @@ namespace ORB_SLAM2
 
             if (mCurrentFrame.mnId > sync_start && sync_mode != 1 && mCurrentFrame.mnId < switch_frame)
             {
-                cout<<"SYNC SIGNAL SENT\n";
-                frame_queue.enqueue("Start Sync");
+                cout << "SYNC SIGNAL SENT\n";
+                // frame_queue.enqueue("Start Sync");
+                migration_queue.enqueue("Start Sync");
                 sync_mode = 1;
             }
 
             if (mCurrentFrame.mnId > switch_frame && sync_mode != 0)
             {
-                if(!bok_copy){
-                    cout<<"TRACKING LOST BEFORE HANDOVER"<<endl;
+                if (!bok_copy)
+                {
+                    cout << "TRACKING LOST BEFORE HANDOVER" << endl;
                 }
 
-                cout<<"SWITCHING HERE\n";
-                edgeNumber=2;
+                cout << "SWITCHING HERE\n";
+                edgeNumber = 2;
                 sync_mode = 0;
-                frame_queue.enqueue("Active Edge");
+                // frame_queue.enqueue("Active Edge");
+                migration_queue.enqueue("Active Edge");
+                // keyframe_queue.enqueue("Active Edge");
                 // send end sync end signal here
             }
 
@@ -1721,6 +1728,19 @@ namespace ORB_SLAM2
             }
         }
         keyframe_queue.enqueue(msg);
+
+        if (sync_mode == 1)
+        {
+            if (migration_queue.size_approx() >= (LOCAL_MAP_SIZE / 3))
+            {
+                string data;
+                if (migration_queue.try_dequeue(data))
+                {
+                    data.clear();
+                }
+            }
+            migration_queue.enqueue(msg);
+        }
         // Edge-SLAM: debug
         cout << "log,Tracking::CreateNewKeyFrame,create keyframe " << pKF->mnId << endl;
         mapUpToDate = false;
@@ -2337,50 +2357,141 @@ namespace ORB_SLAM2
         // This is not a busy wait because wait_dequeue function is blocking
         do
         {
-            if (*edgeNumber == 1)
+
+            // if (*edgeNumber == 1)
+            // {
+            //     if (!socketObject->checkAlive())
+            //     {
+            //         // Edge-SLAM: debug
+            //         cout << "log,Tracking::tcp_send,terminating thread" << endl;
+
+            //         break;
+            //     }
+
+            //     if (success)
+            //         messageQueue->wait_dequeue(msg);
+
+            //     if ((!msg.empty()) && (msg.compare("exit") != 0))
+            //     {
+            //         if (msg == "Active Edge")
+            //         {
+            //             std::string msg1 = "Deactivate";
+            //             if (socketObject->sendMessage(msg1) == 1)
+            //             {
+            //                 success = true;
+            //                 msg.clear();
+
+            //                 // Edge-SLAM: debug
+            //                 cout << "log,Tracking::tcp_send,sent " << name << endl;
+            //                 count << "Deactivate sent" << endl;
+            //             }
+            //             else
+            //             {
+            //                 success = false;
+            //             }
+            //             if (nextEdgeSocket->sendMessage(msg) == 1)
+            //             {
+            //                 success = true;
+            //                 msg.clear();
+
+            //                 // Edge-SLAM: debug
+            //                 cout << "log,Tracking::tcp_send,sent " << name << endl;
+            //                 count << "Activate sent" << endl;
+            //             }
+            //             else
+            //             {
+            //                 success = false;
+            //             }
+            //             continue;
+            //         }
+            //         if (socketObject->sendMessage(msg) == 1)
+            //         {
+            //             success = true;
+            //             msg.clear();
+
+            //             // Edge-SLAM: debug
+            //             cout << "log,Tracking::tcp_send,sent " << name << endl;
+            //         }
+            //         else
+            //         {
+            //             success = false;
+            //         }
+            //     }
+            // }
+            // else
+            // {
+            //     if (!nextEdgeSocket->checkAlive())
+            //     {
+            //         // Edge-SLAM: debug
+            //         cout << "log,Tracking::tcp_send,terminating thread" << endl;
+
+            //         break;
+            //     }
+
+            //     if (success)
+            //         messageQueue->wait_dequeue(msg);
+
+            //     if ((!msg.empty()) && (msg.compare("exit") != 0))
+            //     {
+            //         if (msg == "Active Edge")
+            //         {
+            //             std::string msg1 = "Deactivate";
+            //             if (socketObject->sendMessage(msg1) == 1)
+            //             {
+            //                 success = true;
+            //                 msg.clear();
+
+            //                 // Edge-SLAM: debug
+            //                 cout << "log,Tracking::tcp_send,sent " << name << endl;
+            //                 count << "Deactivate sent" << endl;
+            //             }
+            //             else
+            //             {
+            //                 success = false;
+            //             }
+            //         }
+            //         if (nextEdgeSocket->sendMessage(msg) == 1)
+            //         {
+            //             success = true;
+            //             msg.clear();
+
+            //             // Edge-SLAM: debug
+            //             cout << "log,Tracking::tcp_send,sent " << name << endl;
+            //         }
+            //         else
+            //         {
+            //             success = false;
+            //         }
+            //     }
+            // }
+            if (!nextEdgeSocket->checkAlive() || !socketObject->checkAlive())
             {
-                if (!socketObject->checkAlive())
+                cout << "Socket Object dead\n"
+                     << name << " exiting\n";
+                break;
+            }
+
+            if (success)
+                messageQueue->wait_dequeue(msg);
+
+            if ((!msg.empty()) && (msg.compare("exit") != 0))
+            {
+                if (msg == "Active Edge")
                 {
-                    // Edge-SLAM: debug
-                    cout << "log,Tracking::tcp_send,terminating thread" << endl;
-
-                    break;
-                }
-
-                if (success)
-                    messageQueue->wait_dequeue(msg);
-
-                if ((!msg.empty()) && (msg.compare("exit") != 0))
-                {
-                    if (socketObject->sendMessage(msg) == 1)
+                    std::string msg1 = "Deactivate";
+                    if (socketObject->sendMessage(msg1) == 1)
                     {
                         success = true;
-                        msg.clear();
+                        msg1.clear();
 
                         // Edge-SLAM: debug
                         cout << "log,Tracking::tcp_send,sent " << name << endl;
+                        cout << "Deactivate sent" << endl;
                     }
                     else
                     {
                         success = false;
                     }
-                }
-            }
-            else
-            {
-                if (!nextEdgeSocket->checkAlive())
-                {
-                    // Edge-SLAM: debug
-                    cout << "log,Tracking::tcp_send,terminating thread" << endl;
-
-                    break;
-                }
-
-                if (success)
-                    messageQueue->wait_dequeue(msg);
-
-                if ((!msg.empty()) && (msg.compare("exit") != 0))
-                {
                     if (nextEdgeSocket->sendMessage(msg) == 1)
                     {
                         success = true;
@@ -2388,6 +2499,50 @@ namespace ORB_SLAM2
 
                         // Edge-SLAM: debug
                         cout << "log,Tracking::tcp_send,sent " << name << endl;
+                        cout << "Activate sent" << endl;
+                    }
+                    else
+                    {
+                        success = false;
+                    }
+                    continue;
+                }
+                else
+                {
+                    if (name == "migration" && msg.length() > 100)
+                    {
+                        // int ret1 = socketObject->sendMessage(msg);
+                        int ret2 = nextEdgeSocket->sendMessage(msg);
+                        if (ret2 == 1)
+                        {
+                            success = true;
+                            msg.clear();
+                            cout << "log,Tracking::tcp_send,sent " << name << " KF" << endl;
+                        }
+                        else
+                        {
+                            success = false;
+                            cout << "Success set to false\n";
+                        }
+                        continue;
+                    }
+                    int ret = -1;
+                    if (*edgeNumber == 1)
+                    {
+                        ret = socketObject->sendMessage(msg);
+                    }
+                    else
+                    {
+                        ret = nextEdgeSocket->sendMessage(msg);
+                    }
+
+                    if (ret == 1)
+                    {
+                        success = true;
+                        msg.clear();
+
+                        // Edge-SLAM: debug
+                        cout << "log,Tracking::tcp_send,sent " << name << endl;
                     }
                     else
                     {
@@ -2395,6 +2550,7 @@ namespace ORB_SLAM2
                     }
                 }
             }
+
         } while (1);
     }
 
@@ -2473,9 +2629,18 @@ namespace ORB_SLAM2
         keyframe_socket->~TcpSocket();
         frame_socket->~TcpSocket();
         map_socket->~TcpSocket();
+
+        keyframe_socket2->~TcpSocket();
+        frame_socket2->~TcpSocket();
+        map_socket2->~TcpSocket();
+
+        migration_socket2->~TcpSocket();
+        migration_socket->~TcpSocket();
+
         // This is just a dummy enqueue to unblock the wait_dequeue function in tcp_send()
         keyframe_queue.enqueue("exit");
         frame_queue.enqueue("exit");
+        migration_queue.enqueue("exit");
     }
 
 } // namespace ORB_SLAM

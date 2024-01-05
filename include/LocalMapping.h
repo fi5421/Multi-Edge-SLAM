@@ -100,6 +100,7 @@ public:
 
     bool sync=false;
     bool activeEdge=false;
+    bool sync1=false;
 
 protected:
     // Edge-SLAM: measure
