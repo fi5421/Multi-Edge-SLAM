@@ -7,6 +7,7 @@ import re
 import pandas as pd
 import time
 import shutil
+import json
 
 global track_lost
 track_lost=False
@@ -51,8 +52,15 @@ def server(port,event,server='server'):
     #         global track_lost
     #         track_lost=True
     #         break
-
-    child_process.wait()
+    timeout=5
+    while child_process.poll() is None:
+        try:
+            child_process.wait(timeout=timeout)
+        except:
+            print('TIMEOUT')
+            if(timeout>0.25):
+                timeout-=0.25
+            child_process.send_signal(signal.SIGINT)
     print('signal sent2')
 
 def client(port,dataset,event):
@@ -66,8 +74,9 @@ def client(port,dataset,event):
     out,err=child_process.communicate(input=bytes(inp,'utf-8'))
     out=out.decode('utf-8').split('\n')
     for i in out:
-        print(i)
+        # print(i)
         if "TRACKING LOST BEFORE HANDOVER" in i:
+            print(i,"Tracking Lost before handover")
             global track_lost
             track_lost=True
             break
@@ -141,6 +150,7 @@ switch=input('swith frame:')
 sync=input('sync frame:')
 text_l=[f'branch\t{branch}',f'dataset\t{datasetl}',f'gt\t{gt}',f'runs\t{runs}',f'switch\t{switch}',f'sync\t{sync}',f'time\t{time_text}']
 
+text_d={'branch':branch,'dataset':datasetl,'gt':gt,'runs':runs,'switch':switch,'sync':sync,'time':time_text}
 
 dir='metadata'
 if not os.path.exists(dir):
@@ -178,12 +188,15 @@ while run_count<runs:
     client_thread = threading.Thread(target=client, args=(portStart,dataset,event,))
     client_thread.start()
 
-    # print('waiting for threads to finish')
+    print('waiting for threads to finish')
     client_thread.join()
-    # print('client joined')
+    print('client joined')
     event.set()
+    print('event set')
     server_thread.join()
+    print('server1 joined')
     server2_thread.join()
+    print('server2 joined')
     print('server joined')
     gt=sys.argv[3]
 
@@ -202,18 +215,10 @@ while run_count<runs:
     file.writelines(lines1+lines2)
     file.close()
 
-    traj_path=f"{dir_traj}{run_count}"
 
-    if not os.path.exists(traj_path):
-        os.makedirs(traj_path)
-    print(traj_path)
-
-    shutil.copy('KeyFrameTrajectory_TUM_Format1.txt',f"{traj_path}/KeyFrameTrajectory_TUM_Format1.txt")
-    shutil.copy('KeyFrameTrajectory_TUM_Format2.txt',f"{traj_path}/KeyFrameTrajectory_TUM_Format2.txt")
-    shutil.copy('KeyFrameTrajectory_TUM_Format_combined.txt',f"{traj_path}/KeyFrameTrajectory_TUM_Format_combined.txt")
 
     try:
-        evo_res=run_evo(gt,traj='KeyFrameTrajectory_TUM_Format2.txt')
+        evo_res=run_evo(gt,traj='KeyFrameTrajectory_TUM_Format_combined.txt')
         print('res',evo_res)
     except:
         evo_res=['error in evo' for i in range(8)]
@@ -228,7 +233,37 @@ while run_count<runs:
         print(f'Run Count:\t{run_count}\n',f'Error Count:\t{error_count}\n',f'Track Lost Before Handover:\t{track_b4}\n')
 
         portStart+=10
+        text_d['Run Count']=run_count
+        text_d['Error Count']=error_count
+        text_d['Track Lost Before Handover']=track_b4
+        if not os.path.exists(dir):
+            os.makedirs(dir)
+
+        json_obj=json.dumps(text_d, indent=4)
+
+        # file=open(dir+'/'+time_text+'.txt','w')
+        # file.writelines(text_l)
+        # file.close()
+
+        with open(dir+'/'+time_text+'.txt','w') as file:
+            file.write(json_obj)
+            file.close()
+
         continue
+
+
+
+    traj_path=f"{dir_traj}{run_count}"
+
+    if not os.path.exists(traj_path):
+        os.makedirs(traj_path)
+    print(traj_path)
+    shutil.copy('KeyFrameTrajectory_TUM_Format1.txt',f"{traj_path}/KeyFrameTrajectory_TUM_Format1.txt")
+    shutil.copy('KeyFrameTrajectory_TUM_Format2.txt',f"{traj_path}/KeyFrameTrajectory_TUM_Format2.txt")
+    shutil.copy('KeyFrameTrajectory_TUM_Format_combined.txt',f"{traj_path}/KeyFrameTrajectory_TUM_Format_combined.txt")
+
+
+
     run_count+=1
 
     # print(evo_res+[num])
@@ -241,20 +276,32 @@ while run_count<runs:
 
     print(df)
 
+    df_t=df.transpose()
+    df_t.to_csv(dir+'/'+time_text+'.csv',sep='\t')
 
 
-df_t=df.transpose()
-df_t.to_csv(dir+'/'+time_text+'.csv',sep='\t')
 
 
-text_l+=[f'Run Count:\t{run_count}',f'Error Count:\t{error_count}',f'Track Lost Before Handover:\t{track_b4}']
+    text_l+=[f'Run Count:\t{run_count}',f'Error Count:\t{error_count}',f'Track Lost Before Handover:\t{track_b4}']
 
-text_l=[i+'\n' for i in text_l]
-# dir='metadata'
-if not os.path.exists(dir):
-    os.makedirs(dir)
-file=open(dir+'/'+time_text+'.txt','w')
-file.writelines(text_l)
+    text_d['Run Count']=run_count
+    text_d['Error Count']=error_count
+    text_d['Track Lost Before Handover']=track_b4
+
+    text_l=[i+'\n' for i in text_l]
+    # dir='metadata'
+    if not os.path.exists(dir):
+        os.makedirs(dir)
+
+    json_obj=json.dumps(text_d, indent=4)
+
+    # file=open(dir+'/'+time_text+'.txt','w')
+    # file.writelines(text_l)
+    # file.close()
+
+    with open(dir+'/'+time_text+'.txt','w') as file:
+        file.write(json_obj)
+        file.close()
 
 for i in text_l:
     print(i[:-1])
@@ -262,7 +309,7 @@ for i in text_l:
 print('SAVED TO :',time_text+'.csv')
 
 dir='results'
-proc=subprocess.Popen(['cat',dir+'/'+time_text+'.csv'])
+proc=subprocess.Popen(['cat',dir+'/'+time_text+'/'+time_text+'.csv'])
 
 proc.wait()
 
