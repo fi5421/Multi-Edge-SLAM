@@ -241,6 +241,11 @@ namespace ORB_SLAM2
 
         map_thread = new thread(&ORB_SLAM2::Tracking::tcp_receive, &map_queue, map_socket, 1, "map", map_socket2, edgeNumberPointer);
 
+        port_number++;
+        migration_socket = new TcpSocket(ip, port_number, server_ip, port_number);
+        migration_socket->sendConnectionRequest();
+        migration_thread= new thread(&ORB_SLAM2::Tracking::tcp_send, &migration_queue, migration_socket, "Migration", migration_socket, edgeNumberPointer);
+
         // Edge-SLAM: debug
         cout << "log,Tracking::Tracking,done" << endl;
     }

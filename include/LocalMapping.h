@@ -186,14 +186,20 @@ protected:
     std::thread* frame_thread ;
     std::thread* map_thread ;
 
+
+
     // Map Subset thread
     std::thread* subset_thread;
+    std::thread* migration_thread;
 
 
     // Edge-SLAM: queue declarations
     moodycamel::ConcurrentQueue<std::string> keyframe_queue;
     moodycamel::ConcurrentQueue<std::string> frame_queue;
     moodycamel::BlockingConcurrentQueue<std::string> map_queue;
+
+
+    moodycamel::ConcurrentQueue<std::string> migration_queue;   //recieves from UE
 
     //Map subset sending queue
     moodycamel::BlockingConcurrentQueue<std::string> map_subset_queue_send;
@@ -203,6 +209,8 @@ protected:
     TcpSocket* keyframe_socket;
     TcpSocket* frame_socket;
     TcpSocket* map_socket;
+
+    TcpSocket* migration_socket; //connected to UE
 
     // Map Subset socket
     TcpSocket* map_subset_socket;

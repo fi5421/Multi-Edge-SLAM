@@ -100,16 +100,18 @@ namespace ORB_SLAM2
         // cout << "Enter subset Port Number\n";
         // getline(cin, subset_port);
         // cout << "Subset Port " << std::stoi(subset_port) << endl;
-        cout << "Enter the port number used for keyframe connection: "<<edgeNumber<<endl;
+        cout << "Enter the port number used for keyframe connection: " << edgeNumber << endl;
         getline(cin, port_number);
         port_int = std::stoi(port_number);
-        if (edgeNumber==2)
+        if (edgeNumber == 2)
         {
             subset_port = std::to_string(port_int - 2);
-        }else{
-            subset_port = std::to_string(port_int -1);
         }
-        cout<<"Subset Port on "<<edgeNumber<<" "<<subset_port<<endl;
+        else
+        {
+            subset_port = std::to_string(port_int - 1);
+        }
+        cout << "Subset Port on " << edgeNumber << " " << subset_port << endl;
 
         if (edgeNumber == 1)
         {
@@ -149,9 +151,15 @@ namespace ORB_SLAM2
         map_socket->waitForConnection();
         map_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_send, &map_queue, map_socket, "map");
 
+        port_int += 2;
+        cout << "Port Number for migration connection " << port_int << endl;
+        migration_socket = new TcpSocket(ip, port_int);
+        migration_socket->waitForConnection();
+        migration_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &migration_queue, migration_socket, 1, "migration");
+
         mnLastKeyFrameId = 0;
 
-        cout << "log,LocalMapping::LocalMapping,done on edge: "<<edgeNumber << endl;
+        cout << "log,LocalMapping::LocalMapping,done on edge: " << edgeNumber << endl;
     }
 
     // Edge-SLAM
@@ -333,7 +341,7 @@ namespace ORB_SLAM2
         if (mpMap->KeyFramesInMap() == 0)
         {
             tKF->ChangeParent(NULL);
-            LastKeyFrameInSubset=tKF->mnId;
+            LastKeyFrameInSubset = tKF->mnId;
         }
 
         vector<MapPoint *> vpMapPointMatches = tKF->GetMapPointMatches();
@@ -538,28 +546,28 @@ namespace ORB_SLAM2
                             cout << "Sync: " << sync << endl;
                             cout << "KeyFrames in Map after sync: " << mpMap->KeyFramesInMap() << endl;
                             vector<KeyFrame *> current_local_map = mpMap->GetAllKeyFrames();
-                            
+
                             for (vector<KeyFrame *>::iterator mit = current_local_map.begin(); mit != current_local_map.end(); mit++)
                             {
                                 KeyFrame *tKF = *mit;
-                                KeyFrame *ptKF=mpMap->RetrieveKeyFrame(tKF->GetParent_int());
+                                KeyFrame *ptKF = mpMap->RetrieveKeyFrame(tKF->GetParent_int());
                                 tKF->ChangeParent(ptKF);
                             }
 
                             for (vector<KeyFrame *>::iterator mit = current_local_map.begin(); mit != current_local_map.end(); mit++)
                             {
                                 KeyFrame *tKF = *mit;
-                                cout << "KeyFrame " << tKF->mnId<<" has Parent "<<tKF->GetParent_int();
+                                cout << "KeyFrame " << tKF->mnId << " has Parent " << tKF->GetParent_int();
                                 KeyFrame *ptKF = tKF->GetParent();
-                                if(ptKF){
-                                    cout<<" has Parent in map: "<<ptKF->mnId<<endl;
-
-                                }else{
-                                    cout<<" has no Parent in map \n";
+                                if (ptKF)
+                                {
+                                    cout << " has Parent in map: " << ptKF->mnId << endl;
                                 }
-                                
+                                else
+                                {
+                                    cout << " has no Parent in map \n";
+                                }
                             }
-                           
                         }
                         else if (msg == "Active Edge")
                         {
@@ -605,6 +613,13 @@ namespace ORB_SLAM2
                     else
                     {
                         frameCallback(msg);
+                    }
+                }
+                else if (migration_queue.try_dequeue(msg))
+                {
+                    if (msg == "Start Sync")
+                    {
+                        startSync();
                     }
                 }
             }
