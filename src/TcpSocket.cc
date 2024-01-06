@@ -273,7 +273,9 @@ int TcpSocket::sendMessage(std::string& message)
 
     // Send message
     int offset = 0;
-    unsigned int payloadSize = 1024;
+    // unsigned int payloadSize = 1024;
+    unsigned int payloadSize = 1048576;
+
     while(messageLen > payloadSize)
     {
         if(!(send(this->socketHandle, (&message[0]) + offset, payloadSize, MSG_NOSIGNAL) == payloadSize))
@@ -339,7 +341,7 @@ std::string TcpSocket::recieveMessage()
     }
 
     // Receive message
-    const unsigned int MAX_BUF_LENGTH = 1024;
+    const unsigned int MAX_BUF_LENGTH = 1048576;
     std::vector<char> buffer(MAX_BUF_LENGTH);
     std::string rcv;
     int bytesReceived = 0;

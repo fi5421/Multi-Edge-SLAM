@@ -926,7 +926,7 @@ namespace ORB_SLAM2
         // Update links in the Covisibility Graph
         if (edgeNumber == 2)
         {
-            mpCurrentKeyFrame->UpdateConnections(true);
+            mpCurrentKeyFrame->UpdateConnections(false);
         }
         else
         {
