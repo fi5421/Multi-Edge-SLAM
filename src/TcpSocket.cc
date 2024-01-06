@@ -251,6 +251,7 @@ int TcpSocket::sendMessage(std::string& message)
     // Send message size
     unsigned int messageLen = message.size();
     std::cout<<"TcpSocket::sendMessage: Message length: "<<messageLen<<"\n";
+    std::this_thread::sleep_for(std::chrono::milliseconds(this->delay));
     if(!(send(this->socketHandle, &messageLen, sizeof(unsigned int), MSG_NOSIGNAL) == sizeof(unsigned int)))
     {
         std::cout<<"TcpSocket::sendMessage: Incorrect send size. Reattempting to connect.\n";
@@ -274,6 +275,7 @@ int TcpSocket::sendMessage(std::string& message)
     // Send message
     int offset = 0;
     unsigned int payloadSize = 1024;
+    std::this_thread::sleep_for(std::chrono::milliseconds(this->delay));
     while(messageLen > payloadSize)
     {
         if(!(send(this->socketHandle, (&message[0]) + offset, payloadSize, MSG_NOSIGNAL) == payloadSize))
@@ -331,6 +333,7 @@ std::string TcpSocket::recieveMessage()
     std::cout<<"TcpSocket::recieveMessage: Expecting message of size: "<<sizeOfMessage<<"\n";
 
     // Send ack
+    std::this_thread::sleep_for(std::chrono::milliseconds(this->delay));
     if(!(send(this->socketHandle, "OK", 2, MSG_NOSIGNAL) == 2))
     {
         std::cout<<"TcpSocket::recieveMessage: Incorrect send size. Reattempting to connect.\n";
@@ -363,12 +366,17 @@ std::string TcpSocket::recieveMessage()
     std::cout<<"TcpSocket::recieveMessage: Remaining size is "<<sizeOfMessage<<", Size of recieved message is "<<rcv.size()<<"\n";
 
     // Send ack
+    std::this_thread::sleep_for(std::chrono::milliseconds(this->delay));
     if(!(send(this->socketHandle, "OK", 2, MSG_NOSIGNAL) == 2))
     {
         std::cout<<"TcpSocket::recieveMessage: Incorrect send size. Reattempting to connect.\n";
         this->reconnect();
         return "";
     }
+    
+    std::cout<<"Receive returning\n";
+
+    std::cout<<"Returning function\n";
 
     return rcv;
 }
