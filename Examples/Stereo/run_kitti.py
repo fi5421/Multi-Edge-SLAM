@@ -7,9 +7,110 @@ import re
 import pandas as pd
 import time
 import shutil
+import logging
+import json
+import progressbar as Bar
+import matplotlib.pyplot as plt
 
 global track_lost
 track_lost=False
+
+def plotKeyFrameGeneration(resultsPath, groundtruthPath):
+    # Reading groundtruth
+    groundtruth = pd.read_csv(groundtruthPath, delim_whitespace=True, header=None)
+
+    # Reading configuraiton parameters
+    # config = pd.read_csv(f'results/{resultsPath}/{resultsPath}.txt', delimiter='\t', index_col=0, header=None)
+    # syncFrame = config.iloc[5][1]
+    # switchFrame = config.iloc[4][1]
+    f=open(f'results/{resultsPath}/{resultsPath}.txt','r')
+    data=json.load(f)   
+    syncFrame = data['sync']
+    switchFrame = data['switch']
+
+    # Experiemnt can either involve both state migration and handover, just handover or neither
+    if syncFrame == "No" and switchFrame == "No":
+        syncTimestamp = -1
+        handoverTimestamp = -1
+    elif syncFrame == "No" and switchFrame != "No":
+        syncTimestamp = -1
+        handoverTimestamp = groundtruth.iloc[int(switchFrame)-1, 0]
+    else:
+        syncTimestamp = groundtruth.iloc[int(syncFrame)-1, 0]
+        handoverTimestamp = groundtruth.iloc[int(switchFrame)-1, 0]
+
+    # Average KeyFrame Generation
+    trajectories = []
+    maxSeenTimestamp = 0
+
+    # Finding largest seen timestamp across all trajectories
+    for root, dirs, files in os.walk(f'results/{resultsPath}/traj'):
+        for file in files:
+            if file.endswith(".txt"):
+                file_path = os.path.join(root, file)
+
+                trajectory = (pd.read_csv(file_path, sep='\s+', header=None)).iloc[:, 0]
+                trajectory = trajectory - trajectory[0]     # normalizing by offsetting from first timestamp
+                trajectory = trajectory.astype(int)         # truncating decimal
+                trajectory = trajectory.sort_values()
+                trajectories.append(trajectory)
+
+                # Calculating metadata
+                keyFrameGeneration = trajectory.value_counts().sort_index()
+                timestamps = [value for value, count in keyFrameGeneration.items() for _ in range(count)]             
+                timeTaken = max(timestamps)
+
+                if timeTaken > maxSeenTimestamp:
+                    maxSeenTimestamp = timeTaken
+
+    # Computing average distribution across all trajectories
+    firstIteration = True
+    for trajectory in trajectories:
+        keyFrameGeneration = trajectory.value_counts().sort_index()
+        keyFrameGeneration = keyFrameGeneration.reindex(range(maxSeenTimestamp + 2), fill_value=0)
+        if firstIteration:
+            avg_keyFrameGeneration = keyFrameGeneration
+            firstIteration = False
+        else:
+            avg_keyFrameGeneration = avg_keyFrameGeneration + keyFrameGeneration
+            avg_keyFrameGeneration = avg_keyFrameGeneration/2
+
+    # Normalizing sync and handover timestamps by offsetting from first timestamp
+    handoverTimestamp = handoverTimestamp - trajectories[0][0]
+    syncTimestamp = syncTimestamp - trajectories[0][0]
+    
+    # Dynamically scalable plot
+    peakGeneration = max(avg_keyFrameGeneration)    # maximum keyFrames generated in a second
+    plt.figure(figsize=((0.25*maxSeenTimestamp), peakGeneration))
+    
+    # Plotting KeyFrame Generation across Time
+    plt.bar(avg_keyFrameGeneration.index, avg_keyFrameGeneration.values, color='black', width=1)
+
+    # Plotting State Migration Region (if any)
+    if syncTimestamp == -1 and handoverTimestamp == -1:
+        pass
+    elif syncTimestamp == -1 and handoverTimestamp != -1:
+        plt.axvline(x=handoverTimestamp, color='red', linestyle='--', linewidth=2, label='Handover (No State Migration)')
+        plt.legend()
+    else:
+        plt.axvline(x=syncTimestamp, color='blue', linestyle='--', linewidth=2, label='Start Sync Protocol')
+        plt.axvline(x=handoverTimestamp, color='red', linestyle='--', linewidth=2, label='Stop Sync and Handover')
+        plt.axvspan(syncTimestamp, handoverTimestamp, color='green', alpha=0.3, label='State Migration Region')
+        plt.legend()
+
+    # Set labels and title
+    plt.xlabel('Time (seconds)')
+    plt.ylabel('Average Number of KeyFrames Generated')
+    plt.title('Average KeyFrame Generation Across Time')
+
+    # Customizing  appearance
+    plt.grid(axis='y', linestyle='--')
+    plt.xticks(keyFrameGeneration.index)
+    plt.tight_layout()
+    
+    # Saving plot
+    figFilename = resultsPath.replace('.txt', '') + '.png'
+    plt.savefig(os.path.join(f'results/{resultsPath}', figFilename))
 
 def server(port,event,server='server'):
     print("Server started")
@@ -111,15 +212,24 @@ def run_evo(gt,traj='KeyFrameTrajectory_TUM_Format1.txt'):
     # print(out[-7:])
     return out[-7:]+[num_pose]
 
-if len(sys.argv) != 5:
-    print("Usage: python run_kitti.py <dataset> <portStart> <gt> <run_times>")
-    sys.exit(1)
+time_text=time.strftime("%Y%m%d-%H%M%S")
+dir='results/'+time_text+'/'
+if not os.path.exists(dir):
+    os.makedirs(dir)
+
+dir_traj=dir+'traj/'
+if not os.path.exists(dir_traj):
+    os.makedirs(dir_traj)
+
+# logging.basicConfig(filename=dir+'run_kitti.log',level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG,filename=dir+'run_kitti.log',filemode='w')
+
 
 dataset = sys.argv[1]
 portStart = int(sys.argv[2])
 index=['max','mean','median','min','rmse','sse','std','num pose','numKFS1','numKFS2','totalKFS']
 df=pd.DataFrame(columns=index)
-print(df)
+# logging.debug(df)
 
 runs=int(sys.argv[4])
 
@@ -128,144 +238,191 @@ proc.wait()
 branch=input('enter branch name: ')
 
 gt=sys.argv[3].split('/')[-1]
+comp_gt=sys.argv[5]
 
 
-print('dataset',dataset)
+# logging.debug('\t'+ dataset.to_string().replace('\n', '\n\t'))
 datasetl=dataset.split('/')[-3:-1]
 datasetl='/'.join(datasetl)
 
 
-time_text=time.strftime("%Y%m%d-%H%M%S")
 
 
 switch=input('swith frame:')
 sync=input('sync frame:')
 text_l=[f'branch\t{branch}',f'dataset\t{datasetl}',f'gt\t{gt}',f'runs\t{runs}',f'switch\t{switch}',f'sync\t{sync}',f'time\t{time_text}']
 
+text_d={'branch':branch,'dataset':datasetl,'gt':gt,'runs':runs,'switch':switch,'sync':sync,'time':time_text}
 
-dir='metadata'
-if not os.path.exists(dir):
-    os.makedirs(dir)
+# dir='metadata'
+# if not os.path.exists(dir):
+#     os.makedirs(dir)
 
 run_count=0
 error_count=0
 track_b4=0
 
+# class SlowBar(Bar):
+#     max=runs
+#     message="Slamming"
+#     suffix = '%(percent).1f%%  '
+#     @property
+#     def remaining_minutes(self):
+#         return self.eta // 60
 
-dir='results/'+time_text+'/'
-if not os.path.exists(dir):
-    os.makedirs(dir)
-
-dir_traj=dir+'traj/'
-if not os.path.exists(dir_traj):
-    os.makedirs(dir_traj)
+bar = Bar('SLAMing', max=runs,fill="F", suffix='%(index)d/%(max)d - %(percent).1f%% - %(eta)ds')
 # filename_csv=input('Enter filename for csv: ')
+with bar:
+    while run_count<runs:
+        try:
+        
+            track_lost=False
 
-while run_count<runs:
-    
-    track_lost=False
+            event=threading.Event()
+            server_thread = threading.Thread(target=server, args=(portStart,event,))
+            server_thread.start()
+            
+            time.sleep(1)
 
-    event=threading.Event()
-    server_thread = threading.Thread(target=server, args=(portStart,event,))
-    server_thread.start()
-    
-    time.sleep(1)
+            server2_thread = threading.Thread(target=server, args=(portStart+1,event,'server2'))
+            server2_thread.start()
 
-    server2_thread = threading.Thread(target=server, args=(portStart+1,event,'server2'))
-    server2_thread.start()
+            time.sleep(5)
 
-    time.sleep(5)
+            client_thread = threading.Thread(target=client, args=(portStart,dataset,event,))
+            client_thread.start()
 
-    client_thread = threading.Thread(target=client, args=(portStart,dataset,event,))
-    client_thread.start()
+            # loggin.debug('waiting for threads to finish')
+            logging.debug('waiting for client to finish')
+            client_thread.join()
+            logging.debug('client joined')
+            event.set()
+            logging.debug('waiting for server to finish')
+            server_thread.join()
+            server2_thread.join()
+            # time.sleep(2)
+            logging.debug('server joined')
+            # time.sleep(2)
 
-    # print('waiting for threads to finish')
-    client_thread.join()
-    # print('client joined')
-    event.set()
-    server_thread.join()
-    server2_thread.join()
-    print('server joined')
-    gt=sys.argv[3]
-
-
-    file=open('KeyFrameTrajectory_TUM_Format1.txt','r')
-    lines1=file.readlines()
-    num1=len(lines1)
-    file.close()
-
-    file=open('KeyFrameTrajectory_TUM_Format2.txt','r')
-    lines2=file.readlines()
-    num2=len(lines2)
-    file.close()
-
-    file=open('KeyFrameTrajectory_TUM_Format_combined.txt','w')
-    file.writelines(lines1+lines2)
-    file.close()
-
-    traj_path=f"{dir_traj}{run_count}"
-
-    if not os.path.exists(traj_path):
-        os.makedirs(traj_path)
-    print(traj_path)
-
-    shutil.copy('KeyFrameTrajectory_TUM_Format1.txt',f"{traj_path}/KeyFrameTrajectory_TUM_Format1.txt")
-    shutil.copy('KeyFrameTrajectory_TUM_Format2.txt',f"{traj_path}/KeyFrameTrajectory_TUM_Format2.txt")
-    shutil.copy('KeyFrameTrajectory_TUM_Format_combined.txt',f"{traj_path}/KeyFrameTrajectory_TUM_Format_combined.txt")
-
-    try:
-        evo_res=run_evo(gt,traj='KeyFrameTrajectory_TUM_Format_combined.txt')
-        print('res',evo_res)
-    except:
-        evo_res=['error in evo' for i in range(8)]
-    
-
-    if track_lost:
-        track_b4+=1
-
-    if(evo_res[0]=='error in evo'):
-        error_count+=1
-        print('ERROR IN EVO')
-        print(f'Run Count:\t{run_count}\n',f'Error Count:\t{error_count}\n',f'Track Lost Before Handover:\t{track_b4}\n')
-
-        portStart+=10
-        continue
-    run_count+=1
-
-    # print(evo_res+[num])
-    df.loc[-1]=evo_res+[num1,num2,num1+num2]
-    df.index = df.index + 1
-
-    print(f'Run Count:\t{run_count}\n',f'Error Count:\t{error_count}\n',f'Track Lost Before Handover:\t{track_b4}\n')
-
-    portStart+=10
-
-    print(df)
+            
+            gt=sys.argv[3]
 
 
+            file=open('KeyFrameTrajectory_TUM_Format1.txt','r')
+            lines1=file.readlines()
+            num1=len(lines1)
+            file.close()
 
-df_t=df.transpose()
-df_t.to_csv(dir+'/'+time_text+'.csv',sep='\t')
+            file=open('KeyFrameTrajectory_TUM_Format2.txt','r')
+            lines2=file.readlines()
+            num2=len(lines2)
+            file.close()
+
+            file=open('KeyFrameTrajectory_TUM_Format_combined.txt','w')
+            file.writelines(lines1+lines2)
+            file.close()
 
 
-text_l+=[f'Run Count:\t{run_count}',f'Error Count:\t{error_count}',f'Track Lost Before Handover:\t{track_b4}']
+            try:
+                evo_res=run_evo(gt,traj='KeyFrameTrajectory_TUM_Format_combined.txt')
+                logging.debug("evo result")
+                logging.debug(str(evo_res))
+            except:
+                evo_res=['error in evo' for i in range(8)]
+            
 
-text_l=[i+'\n' for i in text_l]
-# dir='metadata'
-if not os.path.exists(dir):
-    os.makedirs(dir)
-file=open(dir+'/'+time_text+'.txt','w')
-file.writelines(text_l)
+            if track_lost:
+                track_b4+=1
+
+            if(evo_res[0]=='error in evo'):
+                error_count+=1
+                logging.debug('ERROR IN EVO')
+                t=f'Run Count:\\t{run_count}\\n',f'Error Count:\\t{error_count}\\n',f'Track Lost Before Handover:\\t{track_b4}\\n'
+                logging.debug('Run Count:\t%d\n Error Count:\t%d\n Track Lost Before Handover:\t%d\n',run_count,error_count,track_b4)
+
+                portStart+=10
+                text_d['Run Count']=run_count
+                text_d['Error Count']=error_count
+                text_d['Track Lost Before Handover']=track_b4
+                if not os.path.exists(dir):
+                    os.makedirs(dir)
+
+                json_obj=json.dumps(text_d, indent=4)
+
+                # file=open(dir+'/'+time_text+'.txt','w')
+                # file.writelines(text_l)
+                # file.close()
+
+                with open(dir+'/'+time_text+'.txt','w') as file:
+                    file.write(json_obj)
+                    file.close()
+
+                continue
+            traj_path=f"{dir_traj}{run_count}"
+
+            if not os.path.exists(traj_path):
+                os.makedirs(traj_path)
+            logging.debug(traj_path)
+
+            shutil.copy('KeyFrameTrajectory_TUM_Format1.txt',f"{traj_path}/KeyFrameTrajectory_TUM_Format1.txt")
+            shutil.copy('KeyFrameTrajectory_TUM_Format2.txt',f"{traj_path}/KeyFrameTrajectory_TUM_Format2.txt")
+            shutil.copy('KeyFrameTrajectory_TUM_Format_combined.txt',f"{traj_path}/KeyFrameTrajectory_TUM_Format_combined.txt")
+            run_count+=1
+
+            # logging.debug(evo_res+[num])
+            df.loc[-1]=evo_res+[num1,num2,num1+num2]
+            df.index = df.index + 1
+            t=f'Run Count:\t{run_count}\n',f'Error Count:\t{error_count}\n',f'Track Lost Before Handover:\t{track_b4}\n'
+            logging.debug('Run Count:\t%d\n Error Count:\t%d\n Track Lost Before Handover:\t%d\n',run_count,error_count,track_b4)
+
+            portStart+=10
+
+            text_d['Run Count']=run_count
+            text_d['Error Count']=error_count
+            text_d['Track Lost Before Handover']=track_b4
+
+            text_l=[i+'\n' for i in text_l]
+            # dir='metadata'
+            if not os.path.exists(dir):
+                os.makedirs(dir)
+
+            json_obj=json.dumps(text_d, indent=4)
+
+            # file=open(dir+'/'+time_text+'.txt','w')
+            # file.writelines(text_l)
+            # file.close()
+
+            with open(dir+'/'+time_text+'.txt','w') as file:
+                file.write(json_obj)
+                file.close()
+
+            logging.debug(df.to_string())
+
+
+
+            df_t=df.transpose()
+            df_t.to_csv(dir+'/'+time_text+'.csv',sep='\t')
+            bar.next()
+        except KeyboardInterrupt:
+            print("KeyboardInterrupt has been caught.")
+            break
+
 
 for i in text_l:
-    print(i[:-1])
+    logging.debug(i[:-1])
 
-print('SAVED TO :',time_text+'.csv')
+# logging.debug('SAVED TO :',time_text+'.csv')
+logging.debug('SAVED TO : %s.csv',time_text)
 
 dir='results'
-proc=subprocess.Popen(['cat',dir+'/'+time_text+'.csv'])
+proc=subprocess.Popen(['cat',dir+'/'+time_text+'/'+time_text+'.csv'])
 
 proc.wait()
+
+plotKeyFrameGeneration(time_text, comp_gt)
+
+bar.finish()
+
 
 # os.remove('tab.csv')
 
