@@ -115,7 +115,7 @@ namespace ORB_SLAM2
             boost::archive::text_iarchive iia(iis);
             iia >> tKF;
         }
-        catch (boost::archive::archive_exception e)
+        catch (const boost::archive::archive_exception& e)
         {
             cout << "log,LocalMapping::keyframeCallback,error: " << e.what() << endl;
             SetNotStop(false);
@@ -1178,7 +1178,7 @@ namespace ORB_SLAM2
             boost::archive::text_iarchive iia(iis);
             iia >> F;
         }
-        catch (boost::archive::archive_exception e)
+        catch (const boost::archive::archive_exception& e)
         {
             cout << "log,LocalMapping::frameCallback,error: " << e.what() << endl;
             SetNotStop(false);

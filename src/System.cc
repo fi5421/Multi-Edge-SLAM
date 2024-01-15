@@ -20,18 +20,17 @@
 
 
 
-#include "System.h"
 #include "Converter.h"
 #include <thread>
-#include <pangolin/pangolin.h>
+#include "System.h"
 #include <iomanip>
 
 namespace ORB_SLAM2
 {
 // Edge-SLAM: added run type string
 // Edge-SLAM: divided code between client and server
-System::System(const string &strVocFile, const string &strSettingsFile, std::string rt, const eSensor sensor, const bool bUseViewer):
-    mSensor(sensor), RunType(std::move(rt)), mpViewer(static_cast<Viewer*>(NULL)), mbReset(false),mbActivateLocalizationMode(false),
+System::System(const string &strVocFile, const string &strSettingsFile, std::string rt, const eSensor sensor):
+    mSensor(sensor), RunType(std::move(rt)), mbReset(false),mbActivateLocalizationMode(false),
     mbDeactivateLocalizationMode(false)
 {
     // Output welcome message
@@ -86,14 +85,12 @@ System::System(const string &strVocFile, const string &strSettingsFile, std::str
     // Edge-SLAM: client/server
     if (RunType.compare("client") == 0){
         //Create Drawers. These are used by the Viewer
-        mpFrameDrawer = new FrameDrawer(mpMap);
-        mpMapDrawer = new MapDrawer(mpMap, strSettingsFile);
 
         //Initialize the Tracking thread
         
         //(it will live in the main thread of execution, the one that called this constructor)
         cout<<"System calls";
-        mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer,
+        mpTracker = new Tracking(this, mpVocabulary,
                                 mpMap, mpKeyFrameDatabase, strSettingsFile, mSensor);
     } else if (RunType.compare("server") == 0){
         // Edge-SLAM: added settings file
@@ -108,13 +105,6 @@ System::System(const string &strVocFile, const string &strSettingsFile, std::str
 
     if (RunType.compare("client") == 0){
         //Initialize the Viewer thread and launch
-        if(bUseViewer)
-        {
-            // mpViewer = new Viewer(this, mpFrameDrawer,mpMapDrawer,mpTracker,strSettingsFile);
-            // mptViewer = new thread(&Viewer::Run, mpViewer);
-            // changed
-            mpTracker->SetViewer(mpViewer);
-        }
     }
 
     // Edge-SLAM: disabled
@@ -367,16 +357,6 @@ void System::ClientShutdown()
 {
     // Edge-SLAM: call Destructor of tracking to kill all TCP threads
     mpTracker->~Tracking();
-
-    if(mpViewer)
-    {
-        mpViewer->RequestFinish();
-        while(!mpViewer->isFinished())
-            usleep(5000);
-    }
-
-    if(mpViewer)
-        // pangolin::BindToContext("Edge-SLAM: Map Viewer");
 
     // Edge-SLAM: just to make sure all threads have stopped
     usleep(5000);

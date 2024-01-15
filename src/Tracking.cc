@@ -24,7 +24,6 @@
 #include <opencv2/features2d/features2d.hpp>
 
 #include "ORBmatcher.h"
-#include "FrameDrawer.h"
 #include "Converter.h"
 #include "Map.h"
 #include "Initializer.h"
@@ -62,9 +61,9 @@ namespace ORB_SLAM2
     bool Tracking::msRelocStatus = false;
     const int Tracking::RELOC_FREQ = 500;
 
-    Tracking::Tracking(System *pSys, ORBVocabulary *pVoc, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Map *pMap, KeyFrameDatabase *pKFDB, const string &strSettingPath, const int sensor) : mState(NO_IMAGES_YET), mSensor(sensor), mbOnlyTracking(false), mbVO(false), mpORBVocabulary(pVoc),
-                                                                                                                                                                                                  mpKeyFrameDB(pKFDB), mpInitializer(static_cast<Initializer *>(NULL)), mpSystem(pSys), mpViewer(NULL),
-                                                                                                                                                                                                  mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpMap(pMap), mnLastRelocFrameId(0)
+    Tracking::Tracking(System *pSys, ORBVocabulary *pVoc, Map *pMap, KeyFrameDatabase *pKFDB, const string &strSettingPath, const int sensor) : mState(NO_IMAGES_YET), mSensor(sensor), mbOnlyTracking(false), mbVO(false), mpORBVocabulary(pVoc),
+                                                                                                                                                                                                mpKeyFrameDB(pKFDB), mpInitializer(static_cast<Initializer *>(NULL)), mpSystem(pSys),
+                                                                                                                                                                                                mpMap(pMap), mnLastRelocFrameId(0)
     {
         // Load camera parameters from settings file
 
@@ -293,7 +292,7 @@ namespace ORB_SLAM2
             ia >> mapVec;
             is.clear();
         }
-        catch (boost::archive::archive_exception e)
+        catch (const boost::archive::archive_exception& e)
         {
             cout << "log,Tracking::mapCallback,map error: " << e.what() << endl;
             return;
@@ -354,7 +353,7 @@ namespace ORB_SLAM2
                     iia >> tKF;
                     iis.clear();
                 }
-                catch (boost::archive::archive_exception e)
+                catch (const boost::archive::archive_exception& e)
                 {
                     cout << "log,Tracking::mapCallback,keyframe error: " << e.what() << endl;
 
@@ -563,11 +562,6 @@ namespace ORB_SLAM2
             }
         }
 
-        if (mpViewer)
-        {
-            cout << "mpViewer Called" << endl;
-            mpViewer->Release();
-        }
         // changed
 
         // Edge-SLAM: measure
@@ -592,11 +586,6 @@ namespace ORB_SLAM2
         mpLoopClosing=pLoopClosing;
     }
     */
-
-    void Tracking::SetViewer(Viewer *pViewer)
-    {
-        mpViewer = pViewer;
-    }
 
     cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const double &timestamp)
     {
@@ -727,8 +716,6 @@ namespace ORB_SLAM2
                     StereoInitialization();
                 else
                     MonocularInitialization();
-
-                mpFrameDrawer->Update(this);
 
                 if (mState != OK)
                     return;
@@ -863,8 +850,6 @@ namespace ORB_SLAM2
                 else
                     mState = LOST;
 
-                // Update drawer
-                mpFrameDrawer->Update(this);
 
                 // If tracking were good, check if we insert a keyframe
                 if (bOK)
@@ -879,8 +864,6 @@ namespace ORB_SLAM2
                     }
                     else
                         mVelocity = cv::Mat();
-
-                    mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
 
                     // Clean VO matches
                     for (int i = 0; i < mCurrentFrame.N; i++)
@@ -1046,8 +1029,6 @@ namespace ORB_SLAM2
             mpMap->SetReferenceMapPoints(mvpLocalMapPoints);
 
             mpMap->mvpKeyFrameOrigins.push_back(pKFini);
-
-            mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
 
             mState = OK;
         }
@@ -1247,8 +1228,6 @@ namespace ORB_SLAM2
         mLastFrame = Frame(mCurrentFrame);
 
         mpMap->SetReferenceMapPoints(mvpLocalMapPoints);
-
-        mpMapDrawer->SetCurrentCameraPose(pKFcur->GetPose());
 
         mpMap->mvpKeyFrameOrigins.push_back(pKFini);
 
@@ -2148,15 +2127,6 @@ namespace ORB_SLAM2
         }
 
         cout << "System Reseting" << endl;
-        if (mpViewer)
-        {
-            cout << "in if";
-            mpViewer->RequestStop();
-            cout << "after requ";
-            // while(!mpViewer->isStopped())
-            // {cout<<"stuck here";
-            //     usleep(3000);}
-        }
 
         /*
         // Edge-SLAM: disabled
@@ -2212,11 +2182,6 @@ namespace ORB_SLAM2
         mlFrameTimes.clear();
         mlbLost.clear();
 
-        if (mpViewer)
-        {
-            cout << "mpViewer called here reset" << endl;
-            mpViewer->Release();
-        }
         // changed
 
         // Edge-SLAM

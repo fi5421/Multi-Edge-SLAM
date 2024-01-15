@@ -28,4 +28,5 @@ echo "Configuring and building Edge_SLAM ..."
 mkdir build
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
+# echo "cmake done"
 make -j
