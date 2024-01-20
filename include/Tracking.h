@@ -201,7 +201,9 @@ protected:
 
     // System
     System* mpSystem;
-    
+
+    //Drawers
+
     //Map
     Map* mpMap;
 
@@ -243,22 +245,37 @@ protected:
     std::thread* keyframe_thread ;
     std::thread* frame_thread ;
     std::thread* map_thread ;
+
+    std::thread* migration_thread ;
+
     // Edge-SLAM: queue declarations
     moodycamel::BlockingConcurrentQueue<std::string> keyframe_queue;
     moodycamel::BlockingConcurrentQueue<std::string> frame_queue;
     moodycamel::ConcurrentQueue<std::string> map_queue;
+
+    moodycamel::BlockingConcurrentQueue<std::string> migration_queue;
     // Edge-SLAM: TcpSocket Objects
     TcpSocket* keyframe_socket;
     TcpSocket* frame_socket;
     TcpSocket* map_socket;
+    TcpSocket* migration_socket; //connected to first edge
 
     // Next Edge socket
     TcpSocket* keyframe_socket2;
     TcpSocket* frame_socket2;
     TcpSocket* map_socket2;
+    TcpSocket* migration_socket2; //connected to next edge
 
     // Choosing edge to communicate
     int edgeNumber;
+    // 0 normal
+    // 1 sync
+    int sync_mode=0;
+
+
+    int sync_start=275;
+    int switch_frame=375;
+
 
 };
 

@@ -50,7 +50,7 @@ class LocalMapping
 {
 public:
     // Edge-SLAM: added settings file path
-    LocalMapping(Map* pMap, KeyFrameDatabase* pKFDB, ORBVocabulary* pVoc, const string &strSettingPath, const float bMonocular);
+    LocalMapping(Map* pMap, KeyFrameDatabase* pKFDB, ORBVocabulary* pVoc, const string &strSettingPath, const float bMonocular, int edgeNumber_p);
 
     void SetLoopCloser(LoopClosing* pLoopCloser);
 
@@ -72,6 +72,12 @@ public:
     void SetAcceptKeyFrames(bool flag);
     bool SetNotStop(bool flag);
 
+    int edgeNumber;
+
+    int LastKeyFrameInSubset;
+
+    
+
     void InterruptBA();
 
     void RequestFinish();
@@ -89,6 +95,13 @@ public:
     void static tcp_receive(moodycamel::ConcurrentQueue<std::string>* messageQueue, TcpSocket* socketObject, unsigned int maxQueueSize, std::string name);
     void static tcp_send(moodycamel::BlockingConcurrentQueue<std::string>* messageQueue, TcpSocket* socketObject, std::string name);
 
+    void startSync();
+    void ProcessSubset(std::string msg);
+
+    bool sync=false;
+    bool activeEdge=false;
+    bool sync1=false;
+
 protected:
     // Edge-SLAM: measure
     static std::chrono::high_resolution_clock::time_point msLastMUStart;
@@ -104,6 +117,8 @@ protected:
     const static int CONN_KF;   // Set to: for every keyframe, how many connected keyframes should be included in a map update
     static bool msNewKFFlag;    // Flag used to only send map update when a new keyframe is received
     static stack<long unsigned int> msLatestKFsId;  // Stack to keep latest keyframes ids
+
+    int Subset_Map_Size=10;
 
     // Edge-SLAM
     //New KeyFrame rules (according to fps)
@@ -171,14 +186,35 @@ protected:
     std::thread* keyframe_thread ;
     std::thread* frame_thread ;
     std::thread* map_thread ;
+
+
+
+    // Map Subset thread
+    std::thread* subset_thread;
+    std::thread* migration_thread;
+
+
     // Edge-SLAM: queue declarations
     moodycamel::ConcurrentQueue<std::string> keyframe_queue;
     moodycamel::ConcurrentQueue<std::string> frame_queue;
     moodycamel::BlockingConcurrentQueue<std::string> map_queue;
+
+
+    moodycamel::ConcurrentQueue<std::string> migration_queue;   //recieves from UE
+
+    //Map subset sending queue
+    moodycamel::BlockingConcurrentQueue<std::string> map_subset_queue_send;
+    moodycamel::ConcurrentQueue<std::string> map_subset_queue_receive;
+
     // Edge-SLAM: TcpSocket Objects
     TcpSocket* keyframe_socket;
     TcpSocket* frame_socket;
     TcpSocket* map_socket;
+
+    TcpSocket* migration_socket; //connected to UE
+
+    // Map Subset socket
+    TcpSocket* map_subset_socket;
 
     // Edge-SLAM: relocalization
     static vector<KeyFrame*> vpCandidateKFs;
@@ -187,6 +223,9 @@ protected:
     static bool msRelocNewFFlag;    // Flag used to only send reloc map update when a new reloc frame is received
     const static int RELOC_FREQ;    // Set to: after how many ms from last reloc map, a new map should be sent
     void sendRelocMapUpdate();
+    
+
+    
 };
 
 } //namespace ORB_SLAM

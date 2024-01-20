@@ -20,9 +20,9 @@
 
 
 
+#include "System.h"
 #include "Converter.h"
 #include <thread>
-#include "System.h"
 #include <iomanip>
 
 namespace ORB_SLAM2
@@ -75,17 +75,16 @@ System::System(const string &strVocFile, const string &strSettingsFile, std::str
     mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
 
     //Create the Map
+    int edgeNumber =1;
     mpMap = new Map();
     if(RunType.compare("server2")==0)
-    {
+    {   edgeNumber=2;
         cout<<"changing server2 to server\n";
         RunType="server";
     }
 
     // Edge-SLAM: client/server
     if (RunType.compare("client") == 0){
-        //Create Drawers. These are used by the Viewer
-
         //Initialize the Tracking thread
         
         //(it will live in the main thread of execution, the one that called this constructor)
@@ -95,16 +94,12 @@ System::System(const string &strVocFile, const string &strSettingsFile, std::str
     } else if (RunType.compare("server") == 0){
         // Edge-SLAM: added settings file
         //Initialize the Local Mapping thread and launch
-        mpLocalMapper = new LocalMapping(mpMap, mpKeyFrameDatabase, mpVocabulary, strSettingsFile, mSensor==MONOCULAR);
+        mpLocalMapper = new LocalMapping(mpMap, mpKeyFrameDatabase, mpVocabulary, strSettingsFile, mSensor==MONOCULAR,edgeNumber);
         mptLocalMapping = new thread(&ORB_SLAM2::LocalMapping::Run,mpLocalMapper);
 
         //Initialize the Loop Closing thread and launch
         mpLoopCloser = new LoopClosing(mpMap, mpKeyFrameDatabase, mpVocabulary, mSensor!=MONOCULAR);
         mptLoopClosing = new thread(&ORB_SLAM2::LoopClosing::Run, mpLoopCloser);
-    }
-
-    if (RunType.compare("client") == 0){
-        //Initialize the Viewer thread and launch
     }
 
     // Edge-SLAM: disabled
