@@ -155,7 +155,7 @@ int main(int argc, char **argv)
 
         // Tracking time statistics
     }
-    else if(RunType.compare("server") == 0 | RunType.compare("server2") == 0)
+    else if (RunType.compare("server") == 0 || RunType.compare("server2") == 0)
     {
         // Edge-SLAM
         // Create SLAM system. It initializes all system threads and gets ready to process frames.
