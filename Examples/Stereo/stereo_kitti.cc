@@ -53,6 +53,7 @@ void signal_callback_handler(int signum)
 int main(int argc, char **argv)
 {
     // Edge-SLAM
+    // argc = argc - 1;    
     if(argc < 4)
     {
         cerr << endl << "Client Usage: ./stereo_kitti VOC_PATH SETTINGS_PATH RUN_TYPE(client|server) SEQUENCE_PATH" << endl;
@@ -62,7 +63,8 @@ int main(int argc, char **argv)
 
     // Edge-SLAM: check arguments
     // Check run type and convert to lowercase
-    std::string RunType(argv[3]);
+    // std::string RunType(argv[5]);   
+    std::string RunType(argv[3]);   
     std::transform(RunType.begin(), RunType.end(), RunType.begin(), ::tolower);
     if(RunType.compare("client") == 0)
     {

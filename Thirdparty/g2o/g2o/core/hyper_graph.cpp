@@ -29,7 +29,10 @@
 #include <assert.h>
 #include <queue>
 
-namespace g2o {
+#include <iostream>
+
+namespace g2o
+{
 
   HyperGraph::Vertex::Vertex(int id) : _id(id)
   {
@@ -37,6 +40,8 @@ namespace g2o {
 
   HyperGraph::Vertex::~Vertex()
   {
+    std::cout << "Deleting a Vertex"
+              << "\n";
   }
 
   HyperGraph::Edge::Edge(int id) : _id(id)
@@ -57,28 +62,28 @@ namespace g2o {
     _id = id;
   }
 
-  HyperGraph::Vertex* HyperGraph::vertex(int id)
+  HyperGraph::Vertex *HyperGraph::vertex(int id)
   {
-    VertexIDMap::iterator it=_vertices.find(id);
-    if (it==_vertices.end())
+    VertexIDMap::iterator it = _vertices.find(id);
+    if (it == _vertices.end())
       return 0;
     return it->second;
   }
 
-  const HyperGraph::Vertex* HyperGraph::vertex(int id) const
+  const HyperGraph::Vertex *HyperGraph::vertex(int id) const
   {
-    VertexIDMap::const_iterator it=_vertices.find(id);
-    if (it==_vertices.end())
+    VertexIDMap::const_iterator it = _vertices.find(id);
+    if (it == _vertices.end())
       return 0;
     return it->second;
   }
 
-  bool HyperGraph::addVertex(Vertex* v)
+  bool HyperGraph::addVertex(Vertex *v)
   {
-    Vertex* vn=vertex(v->id());
+    Vertex *vn = vertex(v->id());
     if (vn)
       return false;
-    _vertices.insert( std::make_pair(v->id(),v) );
+    _vertices.insert(std::make_pair(v->id(), v));
     return true;
   }
 
@@ -86,8 +91,9 @@ namespace g2o {
    * changes the id of a vertex already in the graph, and updates the bookkeeping
    @ returns false if the vertex is not in the graph;
   */
-  bool HyperGraph::changeId(Vertex* v, int newId){
-    Vertex* v2 = vertex(v->id());
+  bool HyperGraph::changeId(Vertex *v, int newId)
+  {
+    Vertex *v2 = vertex(v->id());
     if (v != v2)
       return false;
     _vertices.erase(v->id());
@@ -96,28 +102,31 @@ namespace g2o {
     return true;
   }
 
-  bool HyperGraph::addEdge(Edge* e)
+  bool HyperGraph::addEdge(Edge *e)
   {
     std::pair<EdgeSet::iterator, bool> result = _edges.insert(e);
-    if (! result.second)
+    if (!result.second)
       return false;
-    for (std::vector<Vertex*>::iterator it = e->vertices().begin(); it != e->vertices().end(); ++it) {
-      Vertex* v = *it;
+    for (std::vector<Vertex *>::iterator it = e->vertices().begin(); it != e->vertices().end(); ++it)
+    {
+      Vertex *v = *it;
       v->edges().insert(e);
     }
     return true;
   }
 
-  bool HyperGraph::removeVertex(Vertex* v)
+  bool HyperGraph::removeVertex(Vertex *v)
   {
-    VertexIDMap::iterator it=_vertices.find(v->id());
-    if (it==_vertices.end())
+    VertexIDMap::iterator it = _vertices.find(v->id());
+    if (it == _vertices.end())
       return false;
-    assert(it->second==v);
-    //remove all edges which are entering or leaving v;
+    assert(it->second == v);
+    // remove all edges which are entering or leaving v;
     EdgeSet tmp(v->edges());
-    for (EdgeSet::iterator it=tmp.begin(); it!=tmp.end(); ++it){
-      if (!removeEdge(*it)){
+    for (EdgeSet::iterator it = tmp.begin(); it != tmp.end(); ++it)
+    {
+      if (!removeEdge(*it))
+      {
         assert(0);
       }
     }
@@ -126,17 +135,18 @@ namespace g2o {
     return true;
   }
 
-  bool HyperGraph::removeEdge(Edge* e)
+  bool HyperGraph::removeEdge(Edge *e)
   {
     EdgeSet::iterator it = _edges.find(e);
     if (it == _edges.end())
       return false;
     _edges.erase(it);
 
-    for (std::vector<Vertex*>::iterator vit = e->vertices().begin(); vit != e->vertices().end(); ++vit) {
-      Vertex* v = *vit;
+    for (std::vector<Vertex *>::iterator vit = e->vertices().begin(); vit != e->vertices().end(); ++vit)
+    {
+      Vertex *v = *vit;
       it = v->edges().find(e);
-      assert(it!=v->edges().end());
+      assert(it != v->edges().end());
       v->edges().erase(it);
     }
 
@@ -150,17 +160,74 @@ namespace g2o {
 
   void HyperGraph::clear()
   {
-    for (VertexIDMap::iterator it=_vertices.begin(); it!=_vertices.end(); ++it)
-      delete (it->second);
-    for (EdgeSet::iterator it=_edges.begin(); it!=_edges.end(); ++it)
-      delete (*it);
+    std::cout << "HyperGraph::clear() CALLED\n";
+
+    bool vertexDeleted = false;
+    bool edgeDeleted = false;
+    int i = 0;
+
+    for (VertexIDMap::iterator it = _vertices.begin(); it != _vertices.end(); ++it)
+    {
+      std::cout << "Deleting VERTEX " << i++ << "\n";
+      std::cout << it->second << "\n";
+
+      if (it->second)
+      {
+        delete it->second;
+      }
+      else
+      {
+        continue;
+      }
+
+      // std::cout << it->second->id() << "\n";
+
+      // delete it->second;
+      // it->second = nullptr;
+      // vertexDeleted = true;
+      // if (i == 10) {
+      //   delete it->second;
+      // }
+    }
+    // _vertices.clear();
+    std::cout << "All Vertices Deleted\n";
+    // std::cout << i << "\n";
+    i = 0;
+    // std::cout << _edges.size() << "\n";
+    for (EdgeSet::iterator it = _edges.begin(); it != _edges.end(); ++it)
+    {
+      std::cout << "Deleting Edge " << i++ << "\n";
+      if (*(it) == NULL)
+      {
+        continue;
+      }
+      else
+      {
+        delete (*it);
+        edgeDeleted = true;
+      }
+      // delete (*it);
+    }
+    std::cout << "All Edges Deleted\n";
+
+    // if (vertexDeleted) {
+    //   _vertices.clear();
+    // }
     _vertices.clear();
+    std::cout << "_vertices cleared\n";
+
+    // if (edgeDeleted) {
+    //   _edges.clear();
+    // }
     _edges.clear();
+    std::cout << "_edges cleared\n";
   }
 
   HyperGraph::~HyperGraph()
   {
-    clear();
+    // clear();
+    // std::cout << "Deconstructing... (HyperGraph::~HyperGraph())"
+    //           << "\n";
   }
 
 } // end namespace

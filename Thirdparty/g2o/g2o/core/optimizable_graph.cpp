@@ -236,7 +236,8 @@ namespace g2o {
 
   OptimizableGraph::~OptimizableGraph()
   {
-    clear();
+    // clear();
+    // std::cout << "Deconstructing... (OptimizableGraph::~OptimizableGraph())" << "\n";
     clearParameters();
   }
 

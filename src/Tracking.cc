@@ -205,7 +205,7 @@ namespace ORB_SLAM2
 
         port_number++;
         cout << "Keyframe thread created " << port_number << endl;
-        getline(cin, dummy);
+        // getline(cin, dummy);
         // cout<<std::format("Frame Connection port Edge1 {} Edge2 {}\n",port_number,port_number+1);
         cout << "Frame Connection port Edge1 " << port_number << " Edge2 " << port_number + 1 << endl;
 
@@ -223,7 +223,7 @@ namespace ORB_SLAM2
 
         port_number++;
         cout << "Frame thread created " << port_number << endl;
-        getline(cin, dummy);
+        // getline(cin, dummy);
         // cout<<std::format("Map Connection port Edge1 {} Edge2 {}\n",port_number,port_number+1);
         cout << "Map Connection port Edge1 " << port_number << " Edge2 " << port_number + 1 << endl;
 

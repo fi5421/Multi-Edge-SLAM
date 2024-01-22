@@ -46,6 +46,11 @@ if(NOT OpenCV_FOUND)
    endif()
 endif()
 
+message(STATUS "OpenCV found in: ${OpenCV_DIR}")
+message(STATUS "OpenCV_INCLUDE_DIRS: ${OpenCV_INCLUDE_DIRS}")
+message(STATUS "OpenCV_LIBS: ${OpenCV_LIBS}")
+
+
 find_package(Eigen3 3.1.0 REQUIRED NO_MODULE)
 find_package(Pangolin REQUIRED)
 find_package(Boost COMPONENTS system serialization filesystem REQUIRED)
@@ -96,7 +101,10 @@ ${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.so
 # Examples/RGB-D/rgbd_tum.cc)
 # target_link_libraries(rgbd_tum ${PROJECT_NAME})
 
+
+# changed
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Stereo)
+# set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/Examples/Stereo -march=native")
 
 add_executable(stereo_kitti
 Examples/Stereo/stereo_kitti.cc)
