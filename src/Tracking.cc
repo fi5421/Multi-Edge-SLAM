@@ -975,9 +975,9 @@ namespace ORB_SLAM2
 
             if (mCurrentFrame.mnId > sync_start && sync_mode != 1 && mCurrentFrame.mnId < switch_frame)
             {
-                cout<<"SYNC SIGNAL SENT\n";
-                frame_queue.enqueue("Start Sync");
-                sync_mode = 1;
+                // cout<<"SYNC SIGNAL SENT\n";
+                // frame_queue.enqueue("Start Sync");
+                // sync_mode = 1;
             }
 
             if (mCurrentFrame.mnId > switch_frame && sync_mode != 0)
@@ -986,10 +986,10 @@ namespace ORB_SLAM2
                     cout<<"TRACKING LOST BEFORE HANDOVER"<<endl;
                 }
 
-                cout<<"SWITCHING HERE\n";
-                edgeNumber=2;
-                sync_mode = 0;
-                frame_queue.enqueue("Active Edge");
+                // cout<<"SWITCHING HERE\n";
+                // edgeNumber=2;
+                // sync_mode = 0;
+                // frame_queue.enqueue("Active Edge");
                 // send end sync end signal here
             }
 
