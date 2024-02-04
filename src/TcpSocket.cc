@@ -20,11 +20,12 @@ TcpSocket::TcpSocket(){}
  */
 TcpSocket::TcpSocket(std::string ip_address, int port_number)
 {
+                                                                                                            
     this->ip_address = ip_address.c_str();
     this->port_number = port_number;
     this->isClient = false;
     this->setupSocket();
-    std::cout<<"TcpSocket::TcpSocket: Call method waitForConnection() method to open socket for listening to connections.\n";
+    std::cout<<"TcpSocket::TcpSocket: Call method waitForConnection() method to open socket for listening to connections. DELAY = " << this->delay << "\n";
     setAlive(true);
     setConnTimeOut(false);
 }
@@ -246,12 +247,12 @@ void TcpSocket::reconnect()
  */
 int TcpSocket::sendMessage(std::string& message)
 {
-    std::cout<<"TcpSocket::sendMessage.\n";
+    // std::cout<<"TcpSocket::sendMessage.\n";
 
     // Send message size
     unsigned int messageLen = message.size();
-    std::cout<<"TcpSocket::sendMessage: Message length: "<<messageLen<<"\n";
-    std::this_thread::sleep_for(std::chrono::milliseconds(this->delay));
+    // std::cout<<"TcpSocket::sendMessage: Message length: "<<messageLen<<"\n";
+    // std::this_thread::sleep_for(std::chrono::milliseconds(this->delay));
     if(!(send(this->socketHandle, &messageLen, sizeof(unsigned int), MSG_NOSIGNAL) == sizeof(unsigned int)))
     {
         std::cout<<"TcpSocket::sendMessage: Incorrect send size. Reattempting to connect.\n";
@@ -261,7 +262,7 @@ int TcpSocket::sendMessage(std::string& message)
 
     // Receive ack
     {
-        std::cout<<"TcpSocket::sendMessage: Waiting for first acknowledgement.\n";
+        // std::cout<<"TcpSocket::sendMessage: Waiting for first acknowledgement.\n";
         char buf[128];
         memset(buf,0,128);
         if(recv(this->socketHandle, buf, 128, 0) != 2)
@@ -275,7 +276,7 @@ int TcpSocket::sendMessage(std::string& message)
     // Send message
     int offset = 0;
     unsigned int payloadSize = 1024;
-    std::this_thread::sleep_for(std::chrono::milliseconds(this->delay));
+    // std::this_thread::sleep_for(std::chrono::milliseconds(this->delay));
     while(messageLen > payloadSize)
     {
         if(!(send(this->socketHandle, (&message[0]) + offset, payloadSize, MSG_NOSIGNAL) == payloadSize))
@@ -300,7 +301,7 @@ int TcpSocket::sendMessage(std::string& message)
 
     // Receive ack
     {
-        std::cout<<"TcpSocket::sendMessage: Waiting for second acknowledgement.\n";
+        // std::cout<<"TcpSocket::sendMessage: Waiting for second acknowledgement.\n";
         char buf[128];
         memset(buf,0,128);
         if(recv(this->socketHandle, buf, 128, 0) != 2)
@@ -311,7 +312,7 @@ int TcpSocket::sendMessage(std::string& message)
         }
     }
 
-    std::cout<<"TcpSocket::sendMessage: Data sent succesfully.\n";
+    // std::cout<<"TcpSocket::sendMessage: Data sent succesfully.\n";
     return 1;
 }
 
@@ -325,7 +326,7 @@ int TcpSocket::sendMessage(std::string& message)
  */
 std::string TcpSocket::recieveMessage()
 {
-    std::cout<<"TcpSocket::receiveMessage.\n";
+    // std::cout<<"TcpSocket::receiveMessage.\n";
 
     // Receive message size
     unsigned int sizeOfMessage;
@@ -333,7 +334,7 @@ std::string TcpSocket::recieveMessage()
     std::cout<<"TcpSocket::recieveMessage: Expecting message of size: "<<sizeOfMessage<<"\n";
 
     // Send ack
-    std::this_thread::sleep_for(std::chrono::milliseconds(this->delay));
+    // std::this_thread::sleep_for(std::chrono::milliseconds(this->delay));
     if(!(send(this->socketHandle, "OK", 2, MSG_NOSIGNAL) == 2))
     {
         std::cout<<"TcpSocket::recieveMessage: Incorrect send size. Reattempting to connect.\n";
@@ -366,7 +367,7 @@ std::string TcpSocket::recieveMessage()
     std::cout<<"TcpSocket::recieveMessage: Remaining size is "<<sizeOfMessage<<", Size of recieved message is "<<rcv.size()<<"\n";
 
     // Send ack
-    std::this_thread::sleep_for(std::chrono::milliseconds(this->delay));
+    // std::this_thread::sleep_for(std::chrono::milliseconds(this->delay));
     if(!(send(this->socketHandle, "OK", 2, MSG_NOSIGNAL) == 2))
     {
         std::cout<<"TcpSocket::recieveMessage: Incorrect send size. Reattempting to connect.\n";

@@ -16,6 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with ORB-SLAM2. If not, see <http://www.gnu.org/licenses/>.
+ * suck a dick
  */
 
 #include "Tracking.h"
@@ -246,7 +247,7 @@ namespace ORB_SLAM2
 
         port_number++;
         cout << "Map thread created " << port_number << endl;
-        getline(cin, dummy);
+        // getline(cin, dummy);
         cout << "Msg Connection port Edge1 " << port_number << " Edge2 " << port_number + 1 << endl;
 
         msg_socket = new TcpSocket(ip, port_number, server_ip, port_number);
@@ -726,8 +727,15 @@ namespace ORB_SLAM2
         // MapUpdate regardless of initialization or not
         {
             string msg;
-            if (map_queue.try_dequeue(msg))
-                mapCallback(msg);
+            if (map_queue.try_dequeue(msg)) {
+                cout << "log,Tracking::Track, LOCAL MAP UPDATE RECEIVED " << mCurrentFrame.mnId << endl;
+                // if ((mCurrentFrame.mnId > 200) && (mCurrentFrame.mnId < 350)) {
+                //     cout << "log,Tracking::Track, SKIPPING LOCAL MAP UPDATE " << mCurrentFrame.mnId << endl;
+                //     // mapCallback(msg);
+                // } else {
+                    mapCallback(msg);
+                // }
+            }
         }
 
 
@@ -859,12 +867,12 @@ namespace ORB_SLAM2
                 mCurrentFrame.mpReferenceKF = mpReferenceKF;
 
                 // If we have an initial estimation of the camera pose and matching. Track the local map.
-                cout << "bok here" << bOK << endl;
+                // cout << "bok here" << bOK << endl;
                 if (!mbOnlyTracking)
                 {
                     if (bOK)
                         bOK = TrackLocalMap();
-                    cout << "here1" << bOK << endl;
+                    // cout << "here1" << bOK << endl;
                 }
                 else
                 {
@@ -873,7 +881,7 @@ namespace ORB_SLAM2
                     // the camera we will use the local map again.
                     if (bOK && !mbVO)
                         bOK = TrackLocalMap();
-                    cout << "here2" << bOK << endl;
+                    // cout << "here2" << bOK << endl;
                 }
 
                 if (bOK)
@@ -981,15 +989,17 @@ namespace ORB_SLAM2
             }
 
             // Edge-SLAM: debug
-            cout << "log,Tracking::Track,end process frame " << mCurrentFrame.mnId << endl;
+            if (mCurrentFrame.mnId % 25 == 0) {
+                cout << "log,Tracking::Track,end process frame " << mCurrentFrame.mnId << endl;
+            }
             if (mCurrentFrame.mnId > 275) {
                 if (slamMode == "NORMAL") {
                     // ofstream f;
                     // f.open("myLogs_Tracking.txt", std::ios::app);
                     // f << "-------------START PRE-SYNCHRONIZATION at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
                     // f.close();
-                    msg_queue.enqueue("PRE-SYNC");
-                    slamMode = "S-START";
+                    // msg_queue.enqueue("PRE-SYNC");
+                    // slamMode = "S-START";
                 }
             }
             
@@ -997,8 +1007,8 @@ namespace ORB_SLAM2
                     edgeNumber = 2; 
                     msg_queue.enqueue("HANDOVER");
                     msg_queue.enqueue("TERMINATE");
-                    cout<<"slamMode: "<<slamMode<<endl;
-                    cout<<"Switching HERE"<<endl;
+                    cout<<"\nslamMode: "<<slamMode<<endl;
+                    cout<<"Switching HERE\n\n"<<endl;
                 
                     if (!bok_copy){
                         cout<<"TRACKING LOST BEFORE HANDOVER"<<endl;
@@ -1012,8 +1022,9 @@ namespace ORB_SLAM2
                 //     slamMode = "H-START";
                 // }
             }
-
-            cout << "Number of frames in MAP:" << mpMap->KeyFramesInMap() << endl;
+            if (mCurrentFrame.mnId % 50 == 0) {
+                cout << "Number of frames in MAP:" << mpMap->KeyFramesInMap() << endl;
+            }
         }
     }
 
@@ -1737,15 +1748,18 @@ namespace ORB_SLAM2
         }
         keyframe_queue.enqueue(msg);
         // Edge-SLAM: debug
-        cout << "log,Tracking::CreateNewKeyFrame,create keyframe " << pKF->mnId << endl;
+        if (pKF->mnId % 25 == 0) {
+            cout << "log,Tracking::CreateNewKeyFrame,create keyframe " << pKF->mnId << endl;
+        }
         mapUpToDate = false;
 
         mnLastKeyFrameId = mCurrentFrame.mnId;
         mpLastKeyFrame = pKF;
 
         // Edge-SLAM: debug
-        cout << "log,Tracking::CreateNewKeyFrame,map has " << mpMap->MapPointsInMap() << " mappoints and " << mpMap->KeyFramesInMap() << " keyframes" << endl;
-
+        if (pKF->mnId % 25 == 0) {
+            cout << "log,Tracking::CreateNewKeyFrame,map has " << mpMap->MapPointsInMap() << " mappoints and " << mpMap->KeyFramesInMap() << " keyframes" << endl;
+        }
         // Edge-SLAM: measure
         msLastKeyFrameStart = std::chrono::high_resolution_clock::now();
     }
@@ -2383,7 +2397,7 @@ namespace ORB_SLAM2
                             msg.clear();
 
                             // Edge-SLAM: debug
-                            cout << "log,Tracking::tcp_send,sent " << name << endl;
+                            // cout << "log,Tracking::tcp_send,sent " << name << endl;
                         }
                         else
                         {
@@ -2401,7 +2415,7 @@ namespace ORB_SLAM2
                         msg.clear();
 
                         // Edge-SLAM: debug
-                        cout << "log,Tracking::tcp_send,sent " << name << endl;
+                        // cout << "log,Tracking::tcp_send,sent " << name << endl;
                     }
                     else
                     {
@@ -2437,7 +2451,7 @@ namespace ORB_SLAM2
                             msg.clear();
 
                             // Edge-SLAM: debug
-                            cout << "log,Tracking::tcp_send,sent " << name << endl;
+                            // cout << "log,Tracking::tcp_send,sent " << name << endl;
                         }
                         else
                         {
@@ -2468,7 +2482,7 @@ namespace ORB_SLAM2
                         msg.clear();
 
                         // Edge-SLAM: debug
-                        cout << "log,Tracking::tcp_send,sent " << name << endl;
+                        // cout << "log,Tracking::tcp_send,sent " << name << endl;
                     }
                     else
                     {
@@ -2494,7 +2508,7 @@ namespace ORB_SLAM2
                         msg.clear();
 
                         // Edge-SLAM: debug
-                        cout << "log,Tracking::tcp_send,sent " << name << endl;
+                        // cout << "log,Tracking::tcp_send,sent " << name << endl;
                     }
                     else
                     {

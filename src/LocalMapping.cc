@@ -1338,7 +1338,7 @@ namespace ORB_SLAM2
             std::string msg;
             msg = os.str();
             os.clear();
-
+            cout<<"TRY TO SEND TO MAP QUEUE\n"<<endl;
             map_queue.enqueue(msg);
 
             msLastMUStart = std::chrono::high_resolution_clock::now();
@@ -1527,10 +1527,15 @@ namespace ORB_SLAM2
     {
         std::string msg;
         bool success = true;
-
+        if (name == "map") {
+            cout << "TCP_SEND FOR MAP INSTANTIAITED\n";
+        }
         // This is not a busy wait because wait_dequeue function is blocking
         do
         {
+            if (name == "map") {
+                cout << "NEW ITERATION\n";
+            }
             if (!socketObject->checkAlive())
             {
                 cout << "log,LocalMapping::tcp_send,terminating thread" << endl;
@@ -1538,8 +1543,15 @@ namespace ORB_SLAM2
                 break;
             }
 
-            if (success)
+            if (success) {
+                if (name == "map") {
+                    cout << "WAIITNG TO DEQUEUE\n";
+                }
                 messageQueue->wait_dequeue(msg);
+                if (name == "map") {
+                    cout << "GOT MAP FROM QUEUE\n";
+                }
+            }
 
             if ((!msg.empty()) && (msg.compare("exit") != 0))
             {
@@ -1553,9 +1565,13 @@ namespace ORB_SLAM2
                 else
                 {
                     success = false;
+                    if (name == "map") {
+                        cout << "SUCCESS HAS BEEN FALSIFIED\n";
+                    }
                 }
             }
         } while (1);
+        cout << "RETURNING FROM TCP_SEND for " << name << "\n";
     }
 
     // Edge-SLAM: receive function to be called on a separate thread

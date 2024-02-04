@@ -4,6 +4,7 @@
 //      - Yash Narendra Saraf (https://github.com/yash21saraf)
 //
 //      December 2019
+// suck a dick1
 //
 #ifndef TCPSOCKET_H
 #define TCPSOCKET_H
@@ -42,7 +43,7 @@ public:
     bool checkAlive(); // Check termination flag
     void setConnTimeOut(bool timeOut); // Set connection timeout flag
     bool checkConnTimeOut(); // Check connection timeout flag
-    int delay=10;
+    int delay=-1;
 
 private:
     int mySocket, otherSocket; // Socket descriptors
