@@ -989,7 +989,7 @@ namespace ORB_SLAM2
             }
 
             // Edge-SLAM: debug
-            if (mCurrentFrame.mnId % 25 == 0) {
+            if (mCurrentFrame.mnId % 10 == 0) {
                 cout << "log,Tracking::Track,end process frame " << mCurrentFrame.mnId << endl;
             }
             if (mCurrentFrame.mnId > 275) {
@@ -998,29 +998,29 @@ namespace ORB_SLAM2
                     // f.open("myLogs_Tracking.txt", std::ios::app);
                     // f << "-------------START PRE-SYNCHRONIZATION at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
                     // f.close();
-                    // msg_queue.enqueue("PRE-SYNC");
-                    // slamMode = "S-START";
+                    msg_queue.enqueue("PRE-SYNC");
+                    slamMode = "S-START";
                 }
             }
             
             if (mCurrentFrame.mnId > 375 & edgeNumber!=2) {
-                    edgeNumber = 2; 
+                    // edgeNumber = 2; 
                     msg_queue.enqueue("HANDOVER");
                     msg_queue.enqueue("TERMINATE");
-                    cout<<"\nslamMode: "<<slamMode<<endl;
-                    cout<<"Switching HERE\n\n"<<endl;
+                    // cout<<"\nslamMode: "<<slamMode<<endl;
+                    // cout<<"Switching HERE\n\n"<<endl;
                 
                     if (!bok_copy){
                         cout<<"TRACKING LOST BEFORE HANDOVER"<<endl;
                     }
-                // if (slamMode == "S-START") {
+                if (slamMode == "S-START") {
 
                 //     // ofstream f;
                 //     // f.open("myLogs_Tracking.txt", std::ios::app);
                 //     // f << "-------------HANDOVER FROM ONE EDGE TO ANOTHER at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
                 //     // f.close();
-                //     slamMode = "H-START";
-                // }
+                    slamMode = "H-START";
+                }
             }
             if (mCurrentFrame.mnId % 50 == 0) {
                 cout << "Number of frames in MAP:" << mpMap->KeyFramesInMap() << endl;
