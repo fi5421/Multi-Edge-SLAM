@@ -182,10 +182,10 @@ namespace ORB_SLAM2
         cout << "Select Edge 1 or 2: ";
         // int edgeNumber;
         cin >> edgeNumber;
-        cout<<"Edge Selected: "<<edgeNumber<<endl;
+        cout << "Edge Selected: " << edgeNumber << endl;
         cin.clear();
         cin.ignore();
-        int *edgeNumberPointer=&edgeNumber;
+        int *edgeNumberPointer = &edgeNumber;
 
         slamMode = "NORMAL";
         string *slamModePointer = &slamMode;
@@ -207,6 +207,7 @@ namespace ORB_SLAM2
         keyframe_socket2->sendConnectionRequest();
 
         keyframe_thread = new thread(&ORB_SLAM2::Tracking::tcp_send, &keyframe_queue, keyframe_socket, "keyframe", keyframe_socket2, edgeNumberPointer, slamModePointer);
+        migration_thread = new thread(&ORB_SLAM2::Tracking::tcp_send, &migration_queue, keyframe_socket2, "migration", keyframe_socket2, edgeNumberPointer, slamModePointer);
         // Edge-SLAM: frame connection
 
         port_number++;
@@ -257,7 +258,7 @@ namespace ORB_SLAM2
         msg_socket2->sendConnectionRequest();
 
         msg_thread = new thread(&ORB_SLAM2::Tracking::tcp_send, &msg_queue, msg_socket, "message", msg_socket2, edgeNumberPointer, slamModePointer);
-        
+
         // Edge-SLAM: debug
         cout << "log,Tracking::Tracking,done" << endl;
     }
@@ -727,21 +728,21 @@ namespace ORB_SLAM2
         // MapUpdate regardless of initialization or not
         {
             string msg;
-            if (map_queue.try_dequeue(msg)) {
+            if (map_queue.try_dequeue(msg))
+            {
                 cout << "log,Tracking::Track, LOCAL MAP UPDATE RECEIVED " << mCurrentFrame.mnId << endl;
                 // if ((mCurrentFrame.mnId > 200) && (mCurrentFrame.mnId < 350)) {
                 //     cout << "log,Tracking::Track, SKIPPING LOCAL MAP UPDATE " << mCurrentFrame.mnId << endl;
                 //     // mapCallback(msg);
                 // } else {
-                    mapCallback(msg);
+                mapCallback(msg);
                 // }
             }
         }
 
-
         // Edge-SLAM: scope the locks
         {
-        bool bok_copy = false;
+            bool bok_copy = false;
             // Edge-SLAM: we also use this lock when a map update is received from the server. Check mapCallback() function
             // Get Map Mutex -> Map cannot be changed
             unique_lock<mutex> lock(mpMap->mMutexMapUpdate);
@@ -967,7 +968,7 @@ namespace ORB_SLAM2
                 }
 
                 mLastFrame = Frame(mCurrentFrame);
-                bok_copy=bOK;
+                bok_copy = bOK;
             }
 
             // Store frame pose information to retrieve the complete camera trajectory afterwards.
@@ -989,11 +990,14 @@ namespace ORB_SLAM2
             }
 
             // Edge-SLAM: debug
-            if (mCurrentFrame.mnId % 10 == 0) {
+            if (mCurrentFrame.mnId % 10 == 0)
+            {
                 cout << "log,Tracking::Track,end process frame " << mCurrentFrame.mnId << endl;
             }
-            if (mCurrentFrame.mnId > 275) {
-                if (slamMode == "NORMAL") {
+            if (mCurrentFrame.mnId > 275)
+            {
+                if (slamMode == "NORMAL")
+                {
                     // ofstream f;
                     // f.open("myLogs_Tracking.txt", std::ios::app);
                     // f << "-------------START PRE-SYNCHRONIZATION at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
@@ -1002,27 +1006,31 @@ namespace ORB_SLAM2
                     slamMode = "S-START";
                 }
             }
-            
-            if (mCurrentFrame.mnId > 375 & edgeNumber!=2) {
-                    // edgeNumber = 2; 
-                    msg_queue.enqueue("HANDOVER");
-                    msg_queue.enqueue("TERMINATE");
-                    // cout<<"\nslamMode: "<<slamMode<<endl;
-                    // cout<<"Switching HERE\n\n"<<endl;
-                
-                    if (!bok_copy){
-                        cout<<"TRACKING LOST BEFORE HANDOVER"<<endl;
-                    }
-                if (slamMode == "S-START") {
 
-                //     // ofstream f;
-                //     // f.open("myLogs_Tracking.txt", std::ios::app);
-                //     // f << "-------------HANDOVER FROM ONE EDGE TO ANOTHER at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
-                //     // f.close();
+            if (mCurrentFrame.mnId > 375 & edgeNumber != 2)
+            {
+                edgeNumber = 2;
+                msg_queue.enqueue("HANDOVER");
+                msg_queue.enqueue("TERMINATE");
+                cout<<"\nslamMode: "<<slamMode<<endl;
+                cout<<"Switching HERE\n\n"<<endl;
+
+                if (!bok_copy)
+                {
+                    cout << "TRACKING LOST BEFORE HANDOVER" << endl;
+                }
+                if (slamMode == "S-START")
+                {
+
+                    //     // ofstream f;
+                    //     // f.open("myLogs_Tracking.txt", std::ios::app);
+                    //     // f << "-------------HANDOVER FROM ONE EDGE TO ANOTHER at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
+                    //     // f.close();
                     slamMode = "H-START";
                 }
             }
-            if (mCurrentFrame.mnId % 50 == 0) {
+            if (mCurrentFrame.mnId % 50 == 0)
+            {
                 cout << "Number of frames in MAP:" << mpMap->KeyFramesInMap() << endl;
             }
         }
@@ -1747,8 +1755,12 @@ namespace ORB_SLAM2
             }
         }
         keyframe_queue.enqueue(msg);
+        if (slamMode=="S-START"){
+            migration_queue.enqueue(msg);
+        }
         // Edge-SLAM: debug
-        if (pKF->mnId % 25 == 0) {
+        if (pKF->mnId % 25 == 0)
+        {
             cout << "log,Tracking::CreateNewKeyFrame,create keyframe " << pKF->mnId << endl;
         }
         mapUpToDate = false;
@@ -1757,7 +1769,8 @@ namespace ORB_SLAM2
         mpLastKeyFrame = pKF;
 
         // Edge-SLAM: debug
-        if (pKF->mnId % 25 == 0) {
+        if (pKF->mnId % 25 == 0)
+        {
             cout << "log,Tracking::CreateNewKeyFrame,map has " << mpMap->MapPointsInMap() << " mappoints and " << mpMap->KeyFramesInMap() << " keyframes" << endl;
         }
         // Edge-SLAM: measure
@@ -2357,11 +2370,11 @@ namespace ORB_SLAM2
     }
 
     // Edge-SLAM: send function to be called on a separate thread
-    void Tracking::tcp_send(moodycamel::BlockingConcurrentQueue<std::string> *messageQueue, TcpSocket *socketObject, std::string name, TcpSocket *nextEdgeSocket, int *edgeNumber, string* slamModePointer)
+    void Tracking::tcp_send(moodycamel::BlockingConcurrentQueue<std::string> *messageQueue, TcpSocket *socketObject, std::string name, TcpSocket *nextEdgeSocket, int *edgeNumber, string *slamModePointer)
     {
         std::string msg;
         bool success = true;
-        
+
         // This is not a busy wait because wait_dequeue function is blocking
         do
         {
@@ -2380,8 +2393,9 @@ namespace ORB_SLAM2
 
                 if (success)
                     messageQueue->wait_dequeue(msg);
-                
-                if (msg == "TERMINATE") {
+
+                if (msg == "TERMINATE")
+                {
                     if (!socketObject->checkAlive())
                     {
                         // Edge-SLAM: debug
@@ -2425,15 +2439,12 @@ namespace ORB_SLAM2
                 continue;
             }
 
-            if ((*slamModePointer) == "S-START")
+            if (name == "migration")
             {
-                // ofstream f;
-                // f.open("myLogs.txt", std::ios::app);
-                // f << "SENDING KEYFRAME TO NEXT EDGE IN ADVANCE in thread " << name << endl;
-                // f.close();
-                if (name == "keyframe")
+                if (*slamModePointer == "S-START")
                 {
-                    if (!nextEdgeSocket->checkAlive())
+                    cout<<"Tracking::TcpSend::migration thread sending KF"<<endl;
+                    if (!socketObject->checkAlive())
                     {
                         // Edge-SLAM: debug
                         cout << "log,Tracking::tcp_send,terminating thread" << endl;
@@ -2445,22 +2456,10 @@ namespace ORB_SLAM2
 
                     if ((!msg.empty()) && (msg.compare("exit") != 0))
                     {
-                        if (nextEdgeSocket->sendMessage(msg) == 1)
-                        {
-                            success = true;
-                            // msg.clear();
-
-                            // Edge-SLAM: debug
-                            // cout << "log,Tracking::tcp_send,sent " << name << endl;
-                        }
-                        else
-                        {
-                            success = false;
-                        }
                         if (socketObject->sendMessage(msg) == 1)
                         {
                             success = true;
-                            // msg.clear();
+                            msg.clear();
 
                             // Edge-SLAM: debug
                             // cout << "log,Tracking::tcp_send,sent " << name << endl;
@@ -2469,12 +2468,63 @@ namespace ORB_SLAM2
                         {
                             success = false;
                         }
-                        msg.clear();
-                        continue;
                     }
                 }
+
+                continue;
+
             }
-            
+
+            // if ((*slamModePointer) == "S-START")
+            // {
+            //     // ofstream f;
+            //     // f.open("myLogs.txt", std::ios::app);
+            //     // f << "SENDING KEYFRAME TO NEXT EDGE IN ADVANCE in thread " << name << endl;
+            //     // f.close();
+            //     if (name == "keyframe")
+            //     {
+            //         if (!nextEdgeSocket->checkAlive())
+            //         {
+            //             // Edge-SLAM: debug
+            //             cout << "log,Tracking::tcp_send,terminating thread" << endl;
+            //             break;
+            //         }
+
+            //         if (success)
+            //             messageQueue->wait_dequeue(msg);
+
+            //         if ((!msg.empty()) && (msg.compare("exit") != 0))
+            //         {
+            //             if (nextEdgeSocket->sendMessage(msg) == 1)
+            //             {
+            //                 success = true;
+            //                 // msg.clear();
+
+            //                 // Edge-SLAM: debug
+            //                 // cout << "log,Tracking::tcp_send,sent " << name << endl;
+            //             }
+            //             else
+            //             {
+            //                 success = false;
+            //             }
+            //             if (socketObject->sendMessage(msg) == 1)
+            //             {
+            //                 success = true;
+            //                 // msg.clear();
+
+            //                 // Edge-SLAM: debug
+            //                 // cout << "log,Tracking::tcp_send,sent " << name << endl;
+            //             }
+            //             else
+            //             {
+            //                 success = false;
+            //             }
+            //             msg.clear();
+            //             continue;
+            //         }
+            //     }
+            // }
+
             if (*edgeNumber == 1)
             {
                 if (!socketObject->checkAlive())
@@ -2503,7 +2553,9 @@ namespace ORB_SLAM2
                         success = false;
                     }
                 }
-            } else {
+            }
+            else
+            {
                 if (!nextEdgeSocket->checkAlive())
                 {
                     // Edge-SLAM: debug
@@ -2535,7 +2587,7 @@ namespace ORB_SLAM2
     }
 
     // Edge-SLAM: receive function to be called on a separate thread
-    void Tracking::tcp_receive(moodycamel::ConcurrentQueue<std::string> *messageQueue, TcpSocket *socketObject, unsigned int maxQueueSize, std::string name, TcpSocket *nextEdgeSocket, int *edgeNumber, string* slamModePointer)
+    void Tracking::tcp_receive(moodycamel::ConcurrentQueue<std::string> *messageQueue, TcpSocket *socketObject, unsigned int maxQueueSize, std::string name, TcpSocket *nextEdgeSocket, int *edgeNumber, string *slamModePointer)
     {
         // Here the while(1) won't cause busy waiting as the implementation of receive function is blocking.
         while (1)

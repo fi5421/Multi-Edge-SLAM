@@ -256,11 +256,13 @@ protected:
     std::thread* frame_thread ;
     std::thread* map_thread ;
     std::thread* msg_thread ;
+    std::thread* migration_thread;
     // Edge-SLAM: queue declarations
     moodycamel::BlockingConcurrentQueue<std::string> keyframe_queue;
     moodycamel::BlockingConcurrentQueue<std::string> frame_queue;
     moodycamel::ConcurrentQueue<std::string> map_queue;
     moodycamel::BlockingConcurrentQueue<std::string> msg_queue;
+    moodycamel::BlockingConcurrentQueue<std::string> migration_queue;
     // Edge-SLAM: TcpSocket Objects
     TcpSocket* keyframe_socket;
     TcpSocket* frame_socket;
