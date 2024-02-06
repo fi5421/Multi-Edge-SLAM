@@ -147,6 +147,8 @@ namespace ORB_SLAM2
             return;
         }
 
+        cout<<"LocalMapping got keyframe "<<tKF->mnId<<endl;
+
         tKF->setORBVocab(mpORBVocabulary);
         tKF->setMapPointer(mpMap);
         tKF->setKeyFrameDatabase(mpKeyFrameDB);

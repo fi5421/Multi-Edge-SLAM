@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with ORB-SLAM2. If not, see <http://www.gnu.org/licenses/>.
- * suck a dick
+ * suck a dick1
  */
 
 #include "Tracking.h"
@@ -2448,7 +2448,7 @@ namespace ORB_SLAM2
                         if (nextEdgeSocket->sendMessage(msg) == 1)
                         {
                             success = true;
-                            msg.clear();
+                            // msg.clear();
 
                             // Edge-SLAM: debug
                             // cout << "log,Tracking::tcp_send,sent " << name << endl;
@@ -2457,6 +2457,20 @@ namespace ORB_SLAM2
                         {
                             success = false;
                         }
+                        if (socketObject->sendMessage(msg) == 1)
+                        {
+                            success = true;
+                            // msg.clear();
+
+                            // Edge-SLAM: debug
+                            // cout << "log,Tracking::tcp_send,sent " << name << endl;
+                        }
+                        else
+                        {
+                            success = false;
+                        }
+                        msg.clear();
+                        continue;
                     }
                 }
             }
