@@ -241,7 +241,8 @@ datasetl=dataset.split('/')[-3:-1]
 datasetl='/'.join(datasetl)
 
 
-time_text=time.strftime("%Y%m%d-%H%M%S")
+# time_text=time.strftime("%Y%m%d-%H%M%S")
+time_text=time.strftime("%d%m%Y-%H:%M:%S")
 
 
 switch=input('swith frame:')
@@ -342,6 +343,9 @@ while run_count<runs:
     # print(evo_res+[num])
     df.loc[-1]=evo_res+[num1,num2,num1+num2]
     df.index = df.index + 1
+
+    df_t=df.transpose()
+    df_t.to_csv(dir+'/'+time_text+'.csv',sep='\t')
 
     print(f'Run Count:\t{run_count}\n',f'Error Count:\t{error_count}\n',f'Track Lost Before Handover:\t{track_b4}\n')
 
