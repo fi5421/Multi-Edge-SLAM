@@ -214,7 +214,8 @@ def run_evo(gt,traj='KeyFrameTrajectory_TUM_Format1.txt'):
     # print(out[-7:])
     return out[-7:]+[num_pose]
 
-time_text=time.strftime("%Y%m%d-%H%M%S")
+# time_text=time.strftime("%Y%m%d-%H%M%S")
+time_text=time.strftime("%d-%m-%Y-%H:%M:%S")
 dir='results/'+time_text+'/'
 if not os.path.exists(dir):
     os.makedirs(dir)
