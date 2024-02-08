@@ -8,6 +8,9 @@ import pandas as pd
 import time
 import shutil
 import matplotlib.pyplot as plt
+import json
+
+# suck a dick
 
 global track_lost
 track_lost=False
@@ -18,9 +21,13 @@ def plotKeyFrameGeneration(resultsPath, groundtruthPath):
     groundtruth = pd.read_csv(groundtruthPath, delim_whitespace=True, header=None)
 
     # Reading configuraiton parameters
-    config = pd.read_csv(f'results/{resultsPath}/{resultsPath}.txt', delimiter='\t', index_col=0, header=None)
-    syncFrame = config.iloc[5][1]
-    switchFrame = config.iloc[4][1]
+    # config = pd.read_csv(f'results/{resultsPath}/{resultsPath}.txt', delimiter='\t', index_col=0, header=None)
+    # syncFrame = config.iloc[5][1]
+    # switchFrame = config.iloc[4][1]
+    f=open(f'results/{resultsPath}/{resultsPath}.txt','r')
+    data=json.load(f)   
+    syncFrame = data['sync']
+    switchFrame = data['switch']
 
     # Experiemnt can either involve both state migration and handover, just handover or neither
     if syncFrame == "No" and switchFrame == "No":
@@ -242,17 +249,17 @@ datasetl='/'.join(datasetl)
 
 
 # time_text=time.strftime("%Y%m%d-%H%M%S")
-time_text=time.strftime("%d%m%Y-%H:%M:%S")
+time_text=time.strftime("%d-%m-%Y_%H:%M:%S")
 
 
 switch=input('swith frame:')
 sync=input('sync frame:')
 text_l=[f'branch\t{branch}',f'dataset\t{datasetl}',f'gt\t{gt}',f'runs\t{runs}',f'switch\t{switch}',f'sync\t{sync}',f'time\t{time_text}']
+text_d={'branch':branch,'dataset':datasetl,'gt':gt,'runs':runs,'switch':switch,'sync':sync,'time':time_text}
 
-
-dir='metadata'
-if not os.path.exists(dir):
-    os.makedirs(dir)
+# dir='metadata'
+# if not os.path.exists(dir):
+#     os.makedirs(dir)
 
 run_count=0
 error_count=0
@@ -337,6 +344,22 @@ while run_count<runs:
         print(f'Run Count:\t{run_count}\n',f'Error Count:\t{error_count}\n',f'Track Lost Before Handover:\t{track_b4}\n')
 
         portStart+=10
+        text_d['Run Count']=run_count
+        text_d['Error Count']=error_count
+        text_d['Track Lost Before Handover']=track_b4
+        if not os.path.exists(dir):
+            os.makedirs(dir)
+
+        json_obj=json.dumps(text_d, indent=4)
+
+        # file=open(dir+'/'+time_text+'.txt','w')
+        # file.writelines(text_l)
+        # file.close()
+
+        with open(dir+'/'+time_text+'.txt','w') as file:
+            file.write(json_obj)
+            file.close()
+
         continue
     run_count+=1
 
@@ -346,6 +369,19 @@ while run_count<runs:
 
     df_t=df.transpose()
     df_t.to_csv(dir+'/'+time_text+'.csv',sep='\t')
+
+    text_d['Run Count']=run_count
+    text_d['Error Count']=error_count
+    text_d['Track Lost Before Handover']=track_b4
+    json_obj=json.dumps(text_d, indent=4)
+
+    # file=open(dir+'/'+time_text+'.txt','w')
+    # file.writelines(text_l)
+    # file.close()
+
+    with open(dir+'/'+time_text+'.txt','w') as file:
+        file.write(json_obj)
+        file.close()
 
     print(f'Run Count:\t{run_count}\n',f'Error Count:\t{error_count}\n',f'Track Lost Before Handover:\t{track_b4}\n')
 
@@ -359,18 +395,18 @@ df_t=df.transpose()
 df_t.to_csv(dir+'/'+time_text+'.csv',sep='\t')
 
 
-text_l+=[f'Run Count:\t{run_count}',f'Error Count:\t{error_count}',f'Track Lost Before Handover:\t{track_b4}']
+# text_l+=[f'Run Count:\t{run_count}',f'Error Count:\t{error_count}',f'Track Lost Before Handover:\t{track_b4}']
 
-text_l=[i+'\n' for i in text_l]
-# dir='metadata'
-if not os.path.exists(dir):
-    os.makedirs(dir)
-file=open(dir+'/'+time_text+'.txt','w')
-file.writelines(text_l)
-file.close()
+# text_l=[i+'\n' for i in text_l]
+# # dir='metadata'
+# if not os.path.exists(dir):
+#     os.makedirs(dir)
+# file=open(dir+'/'+time_text+'.txt','w')
+# file.writelines(text_l)
+# file.close()
 
-for i in text_l:
-    print(i[:-1])
+# for i in text_l:
+#     print(i[:-1])
 
 print('SAVED TO :',time_text+'.csv')
 
@@ -378,10 +414,10 @@ print(time_text)
 print(gt)
 
 
-dir='results'
-proc=subprocess.Popen(['cat',dir+'/'+time_text+'.csv'])
+# dir='results'
+# proc=subprocess.Popen(['cat',dir+'/'+time_text+'.csv'])
 
-proc.wait()
+# proc.wait()
 plotKeyFrameGeneration(time_text, gt)
 # os.remove('tab.csv')
 
