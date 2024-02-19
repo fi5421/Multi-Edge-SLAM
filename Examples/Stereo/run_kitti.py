@@ -215,22 +215,23 @@ def run_evo(gt,traj='KeyFrameTrajectory_TUM_Format1.txt'):
     return out[-7:]+[num_pose]
 
 # time_text=time.strftime("%Y%m%d-%H%M%S")
-time_text=time.strftime("%d-%m-%Y-%H:%M:%S")
-dir='results/'+time_text+'/'
-if not os.path.exists(dir):
-    os.makedirs(dir)
-
-dir_traj=dir+'traj/'
-if not os.path.exists(dir_traj):
-    os.makedirs(dir_traj)
-
-# logging.basicConfig(filename=dir+'run_kitti.log',level=logging.DEBUG)
-logging.basicConfig(level=logging.DEBUG,filename=dir+'run_kitti.log',filemode='w')
-
-
 if len(sys.argv)<6:
-    print('Usage: python3 run_kitti.py dataset port_start gt runs comp_gt')
+    print('Usage1: python3 run_kitti.py dataset port_start gt runs comp_gt optional: branch switch sync time_stamp')
     exit()
+
+
+print(sys.argv)
+if len(sys.argv)==10:
+    time_text=sys.argv[9]
+else:
+    time_text=time.strftime("%d-%m-%Y-%H:%M:%S")
+
+
+# time_text=time.strftime("%d-%m-%Y-%H:%M:%S")
+dir='results/'+time_text+'/'
+# logging.basicConfig(filename=dir+'run_kitti.log',level=logging.DEBUG)
+
+
 
 dataset = sys.argv[1]
 portStart = int(sys.argv[2])
@@ -240,9 +241,14 @@ df=pd.DataFrame(columns=index)
 
 runs=int(sys.argv[4])
 
-proc=subprocess.Popen(['git','branch'])
-proc.wait()
-branch=input('enter branch name: ')
+# proc=subprocess.Popen(['git','branch'])
+# proc.wait()
+if len(sys.argv)>6:
+    branch=sys.argv[6]
+else:
+    branch=input('enter branch name: ')
+# branch=input('enter branch name: ')
+
 
 gt=sys.argv[3].split('/')[-1]
 comp_gt=sys.argv[5]
@@ -254,10 +260,26 @@ datasetl='/'.join(datasetl)
 
 
 
+if len(sys.argv)>6:
+    switch=sys.argv[7]
+else:
+    switch=input('swith frame:')
 
-switch=input('swith frame:')
-sync=input('sync frame:')
+if len(sys.argv)>6:
+    sync=sys.argv[8]
+else:
+    sync=input('sync frame:')
+
+    
 text_l=[f'branch\t{branch}',f'dataset\t{datasetl}',f'gt\t{gt}',f'runs\t{runs}',f'switch\t{switch}',f'sync\t{sync}',f'time\t{time_text}']
+if not os.path.exists(dir):
+    os.makedirs(dir)
+    print("making",dir)
+
+dir_traj=dir+'traj/'
+if not os.path.exists(dir_traj):
+    os.makedirs(dir_traj)
+logging.basicConfig(level=logging.DEBUG,filename=dir+'run_kitti.log',filemode='w')
 
 text_d={'branch':branch,'dataset':datasetl,'gt':gt,'runs':runs,'switch':switch,'sync':sync,'time':time_text}
 
@@ -280,6 +302,11 @@ track_b4=0
 # bar = Bar('SLAMing', max=runs,fill="F", suffix='%(index)d/%(max)d - %(percent).1f%% - %(eta)ds')
 # filename_csv=input('Enter filename for csv: ')
 
+
+print("switch", switch, "sync", sync, 'branch', branch,'time_stamp',time_text)
+# exit()
+gt=sys.argv[3]
+
 while run_count<runs:
     try:
     
@@ -289,7 +316,7 @@ while run_count<runs:
         server_thread = threading.Thread(target=server, args=(portStart,event,))
         server_thread.start()
         
-        time.sleep(1)
+        # time.sleep(1)
 
         server2_thread = threading.Thread(target=server, args=(portStart+1,event,'server2'))
         server2_thread.start()
@@ -307,12 +334,11 @@ while run_count<runs:
         logging.debug('waiting for server to finish')
         server_thread.join()
         server2_thread.join()
-        # time.sleep(2)
+        time.sleep(2)
         logging.debug('server joined')
         # time.sleep(2)
 
         
-        gt=sys.argv[3]
 
 
         file=open('KeyFrameTrajectory_TUM_Format1.txt','r')

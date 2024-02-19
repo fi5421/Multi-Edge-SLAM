@@ -252,7 +252,7 @@ int TcpSocket::sendMessage(std::string& message)
     // Send message size
     unsigned int messageLen = message.size();
     // std::cout<<"TcpSocket::sendMessage: Message length: "<<messageLen<<"\n";
-    // std::this_thread::sleep_for(std::chrono::milliseconds(this->delay));
+    std::this_thread::sleep_for(std::chrono::milliseconds(this->delay));
     if(!(send(this->socketHandle, &messageLen, sizeof(unsigned int), MSG_NOSIGNAL) == sizeof(unsigned int)))
     {
         std::cout<<"TcpSocket::sendMessage: Incorrect send size. Reattempting to connect.\n";
@@ -276,7 +276,7 @@ int TcpSocket::sendMessage(std::string& message)
     // Send message
     int offset = 0;
     unsigned int payloadSize = 1024;
-    // std::this_thread::sleep_for(std::chrono::milliseconds(this->delay));
+    std::this_thread::sleep_for(std::chrono::milliseconds(this->delay));
     while(messageLen > payloadSize)
     {
         if(!(send(this->socketHandle, (&message[0]) + offset, payloadSize, MSG_NOSIGNAL) == payloadSize))

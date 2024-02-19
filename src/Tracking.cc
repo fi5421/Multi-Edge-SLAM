@@ -994,7 +994,7 @@ namespace ORB_SLAM2
             {
                 cout << "log,Tracking::Track,end process frame " << mCurrentFrame.mnId << endl;
             }
-            if (mCurrentFrame.mnId > 275)
+            if (mCurrentFrame.mnId > 374)
             {
                 if (slamMode == "NORMAL")
                 {
@@ -1003,7 +1003,7 @@ namespace ORB_SLAM2
                     // f << "-------------START PRE-SYNCHRONIZATION at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
                     // f.close();
                     msg_queue.enqueue("PRE-SYNC");
-                    slamMode = "S-START";
+                    // slamMode = "S-START";
                 }
             }
 

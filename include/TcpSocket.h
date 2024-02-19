@@ -43,7 +43,7 @@ public:
     bool checkAlive(); // Check termination flag
     void setConnTimeOut(bool timeOut); // Set connection timeout flag
     bool checkConnTimeOut(); // Check connection timeout flag
-    int delay=-1;
+    int delay=0;
 
 private:
     int mySocket, otherSocket; // Socket descriptors
