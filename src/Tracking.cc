@@ -976,7 +976,7 @@ namespace ORB_SLAM2
             if (mCurrentFrame.mnId > sync_start && sync_mode != 1 && mCurrentFrame.mnId < switch_frame)
             {
                 cout<<"SYNC SIGNAL SENT\n";
-                frame_queue.enqueue("Start Sync");
+                // frame_queue.enqueue("Start Sync");
                 sync_mode = 1;
             }
 

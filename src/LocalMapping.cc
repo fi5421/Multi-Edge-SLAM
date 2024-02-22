@@ -615,10 +615,10 @@ namespace ORB_SLAM2
             // Check if there are keyframes in the queue
             if (CheckNewKeyFrames())
             {
-                cout << "log,LocalMapping::Run, in first if\n";
+                // cout << "log,LocalMapping::Run, in first if\n";
                 // BoW conversion and insertion in Map
                 ProcessNewKeyFrame();
-                cout << "log,LocalMapping::Run, out of processnewkeyframe\n";
+                // cout << "log,LocalMapping::Run, out of processnewkeyframe\n";
 
                 // Edge-SLAM: check if new keyframe is received
                 {
@@ -639,7 +639,7 @@ namespace ORB_SLAM2
                 {
                     if (edgeNumber == 2)
                     {
-                        cout << "log,LocalMapping::Run, 3.1\n";
+                        // cout << "log,LocalMapping::Run, 3.1\n";
                     }
 
                     // Find more matches in neighbor keyframes and fuse point duplications
@@ -655,7 +655,7 @@ namespace ORB_SLAM2
                 }
                 if (edgeNumber == 2)
                 {
-                    cout << "log,LocalMapping::Run, 4\n";
+                    // cout << "log,LocalMapping::Run, 4\n";
                 }
 
                 mbAbortBA = false;
@@ -665,13 +665,13 @@ namespace ORB_SLAM2
                     // Local BA
                     if (edgeNumber == 2)
                     {
-                        cout << "log,LocalMapping::Run, 4.1\n";
+                        // cout << "log,LocalMapping::Run, 4.1\n";
                     }
                     if (mpMap->KeyFramesInMap() > 2)
                     {
                         if (edgeNumber == 2)
                         {
-                            cout << "log,LocalMapping::Run, 4.2\n";
+                            // cout << "log,LocalMapping::Run, 4.2\n";
                         }
                         if (activeEdge)
                         {
@@ -680,18 +680,18 @@ namespace ORB_SLAM2
                     }
                     if (edgeNumber == 2)
                     {
-                        cout << "log,LocalMapping::Run, 4.3\n";
+                        // cout << "log,LocalMapping::Run, 4.3\n";
                     }
                     // Check redundant local Keyframes
                     KeyFrameCulling();
                     if (edgeNumber == 2)
                     {
-                        cout << "log,LocalMapping::Run, 4.4\n";
+                        // cout << "log,LocalMapping::Run, 4.4\n";
                     }
                 }
                 if (edgeNumber == 2)
                 {
-                    cout << "log,LocalMapping::Run, 5\n";
+                    // cout << "log,LocalMapping::Run, 5\n";
                 }
 
                 mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);
@@ -1188,7 +1188,7 @@ namespace ORB_SLAM2
         vector<KeyFrame *> vpTargetKFs;
         if (edgeNumber == 2)
         {
-            cout << "here 3.1.1\n";
+            // cout << "here 3.1.1\n";
         }
         for (vector<KeyFrame *>::const_iterator vit = vpNeighKFs.begin(), vend = vpNeighKFs.end(); vit != vend; vit++)
         {
@@ -1210,7 +1210,7 @@ namespace ORB_SLAM2
         }
         if (edgeNumber == 2)
         {
-            cout << "here 3.1.2\n";
+            // cout << "here 3.1.2\n";
         }
 
         // Search matches by projection from current KF in target KFs
@@ -1225,7 +1225,7 @@ namespace ORB_SLAM2
 
         if (edgeNumber == 2)
         {
-            cout << "here 3.1.3\n";
+            // cout << "here 3.1.3\n";
         }
 
         // Search matches by projection from target KFs in current KF
@@ -1252,19 +1252,19 @@ namespace ORB_SLAM2
 
         if (edgeNumber == 2)
         {
-            cout << "here 3.1.4\n";
+            // cout << "here 3.1.4\n";
         }
 
         matcher.Fuse(mpCurrentKeyFrame, vpFuseCandidates);
         if (edgeNumber == 2)
         {
-            cout << "here 3.1.4.1\n";
+            // cout << "here 3.1.4.1\n";
         }
         // Update points
         vpMapPointMatches = mpCurrentKeyFrame->GetMapPointMatches();
         if (edgeNumber == 2)
         {
-            cout << "here 3.1.4.2\n";
+            // cout << "here 3.1.4.2\n";
         }
 
         // Need to change this
@@ -1285,14 +1285,14 @@ namespace ORB_SLAM2
         }
         if (edgeNumber == 2)
         {
-            cout << "here 3.1.5\n";
+            // cout << "here 3.1.5\n";
         }
 
         // Update connections in covisibility graph
         mpCurrentKeyFrame->UpdateConnections(false);
         if (edgeNumber == 2)
         {
-            cout << "here 3.1.6\n";
+            // cout << "here 3.1.6\n";
         }
     }
 
