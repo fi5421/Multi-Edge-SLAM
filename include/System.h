@@ -125,6 +125,7 @@ public:
     int GetTrackingState();
     std::vector<MapPoint*> GetTrackedMapPoints();
     std::vector<cv::KeyPoint> GetTrackedKeyPointsUn();
+    vector<pair<double,int>>* localMapSize;
 
 private:
 

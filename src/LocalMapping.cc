@@ -155,7 +155,7 @@ namespace ORB_SLAM2
 
         // Check keyframe after receiving it from the client
         // If first received keyframe then insert without additional checking
-        cout << slamMode << endl;
+        // cout << slamMode << endl;
         // if ((tKF->mnId > 1) && (mpMap->KeyFramesInMap() < 1)) {
         //     if (slamMode == "NORMAL")
         //     {
@@ -365,6 +365,7 @@ namespace ORB_SLAM2
                 // Send regular local map update
                 else if ((dCount > MAP_FREQ) && (mpMap->KeyFramesInMap() > 0) && (msNewKFFlag) && (!CheckReset()))
                 {
+                    // cout << slamMode << endl;
                     if (slamMode != "S-START")
                     {
                         // ofstream f;
@@ -1340,9 +1341,8 @@ namespace ORB_SLAM2
             std::string msg;
             msg = os.str();
             os.clear();
-            cout<<"TRY TO SEND TO MAP QUEUE\n"<<endl;
             map_queue.enqueue(msg);
-
+            cout<<"1TRY TO SEND TO MAP QUEUE\n"<<endl;
             msLastMUStart = std::chrono::high_resolution_clock::now();
         }
 
@@ -1506,7 +1506,7 @@ namespace ORB_SLAM2
             os.clear();
 
             map_queue.enqueue(msg);
-
+            cout<<"2TRY TO SEND TO MAP QUEUE\n"<<endl;
             // Clear
             KFsId.clear();
             KFsData.clear();
@@ -1528,6 +1528,7 @@ namespace ORB_SLAM2
     void LocalMapping::tcp_send(moodycamel::BlockingConcurrentQueue<std::string> *messageQueue, TcpSocket *socketObject, std::string name)
     {
         std::string msg;
+        bool skipFirst = false;
         bool success = true;
         if (name == "map") {
             cout << "TCP_SEND FOR MAP INSTANTIAITED\n";
@@ -1540,7 +1541,11 @@ namespace ORB_SLAM2
             }
             if (!socketObject->checkAlive())
             {
-                cout << "log,LocalMapping::tcp_send,terminating thread" << endl;
+                if (name != "map") {
+                    cout << "log,LocalMapping::tcp_send,terminating thread" << endl;
+                } else {
+                    cout << "MAP::log,LocalMapping::tcp_send,terminating thread" << endl;
+                }
 
                 break;
             }
@@ -1552,17 +1557,29 @@ namespace ORB_SLAM2
                 messageQueue->wait_dequeue(msg);
                 if (name == "map") {
                     cout << "GOT MAP FROM QUEUE\n";
+                    // if (!skipFirst) {
+                    //     skipFirst = true;
+                    //     continue;
+                    // }
                 }
             }
-
+            if (name == "map") {
+                cout << "GOT MAP FROM QUEUE - TIME TO SEND\n";
+            }
             if ((!msg.empty()) && (msg.compare("exit") != 0))
             {
+                if (name == "map") {
+                    cout << "TRYING TO SEND\n";
+                }
                 if (socketObject->sendMessage(msg) == 1)
                 {
                     success = true;
                     msg.clear();
-
-                    cout << "log,LocalMapping::tcp_send,sent " << name << endl;
+                    if (name != "map") {
+                        cout << "log,LocalMapping::tcp_send,sent " << name << endl;
+                    } else {
+                        cout << "MAP::log,LocalMapping::tcp_send,sent " << name << endl;
+                    }
                 }
                 else
                 {
@@ -1571,6 +1588,10 @@ namespace ORB_SLAM2
                         cout << "SUCCESS HAS BEEN FALSIFIED\n";
                     }
                 }
+            }
+
+            if (name == "map") {
+                cout << "ITERATION OVER - ONTO NEXT\n";
             }
         } while (1);
         cout << "RETURNING FROM TCP_SEND for " << name << "\n";

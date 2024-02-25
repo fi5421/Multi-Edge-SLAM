@@ -63,10 +63,14 @@ namespace ORB_SLAM2
     bool Tracking::msRelocStatus = false;
     const int Tracking::RELOC_FREQ = 500;
 
-    Tracking::Tracking(System *pSys, ORBVocabulary *pVoc, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Map *pMap, KeyFrameDatabase *pKFDB, const string &strSettingPath, const int sensor) : mState(NO_IMAGES_YET), mSensor(sensor), mbOnlyTracking(false), mbVO(false), mpORBVocabulary(pVoc),
+    Tracking::Tracking(System *pSys, ORBVocabulary *pVoc, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Map *pMap, KeyFrameDatabase *pKFDB, const string &strSettingPath, const int sensor,vector<pair<double,int>>* localMapVector) : mState(NO_IMAGES_YET), mSensor(sensor), mbOnlyTracking(false), mbVO(false), mpORBVocabulary(pVoc),
                                                                                                                                                                                                   mpKeyFrameDB(pKFDB), mpInitializer(static_cast<Initializer *>(NULL)), mpSystem(pSys), mpViewer(NULL),
                                                                                                                                                                                                   mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpMap(pMap), mnLastRelocFrameId(0)
     {
+
+        // setting local map size vector
+
+        localMapSize=localMapVector;
         // Load camera parameters from settings file
 
         cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
@@ -245,6 +249,7 @@ namespace ORB_SLAM2
         map_socket2->sendConnectionRequest();
 
         map_thread = new thread(&ORB_SLAM2::Tracking::tcp_receive, &map_queue, map_socket, 1, "map", map_socket2, edgeNumberPointer, slamModePointer);
+        map_thread2 = new thread(&ORB_SLAM2::Tracking::tcp_receive, &map_queue, map_socket, 1, "map2", map_socket2, edgeNumberPointer, slamModePointer);
 
         port_number++;
         cout << "Map thread created " << port_number << endl;
@@ -357,6 +362,8 @@ namespace ORB_SLAM2
 
         // Reset tracking thread to update it using a new local-map
         MUReset();
+
+        cout<<"map size after reset: "<<mpMap->KeyFramesInMap()<<endl;
 
         // Reconstruct keyframes loop
         // For every keyframe, check its mappoints, then add them to tracking local-map
@@ -990,10 +997,13 @@ namespace ORB_SLAM2
             }
 
             // Edge-SLAM: debug
-            if (mCurrentFrame.mnId % 10 == 0)
+            if (mCurrentFrame.mnId % 25 == 0)
             {
-                cout << "log,Tracking::Track,end process frame " << mCurrentFrame.mnId << endl;
+                cout << "log,Tracking::Track,end process frame " << mCurrentFrame.mnId <<"\nmap size: "<<mpMap->KeyFramesInMap()<< endl;
             }
+
+            localMapSize->push_back(std::make_pair(mCurrentFrame.mTimeStamp,mpMap->KeyFramesInMap() ));
+
             if (mCurrentFrame.mnId > 374)
             {
                 if (slamMode == "NORMAL")
@@ -1002,7 +1012,7 @@ namespace ORB_SLAM2
                     // f.open("myLogs_Tracking.txt", std::ios::app);
                     // f << "-------------START PRE-SYNCHRONIZATION at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
                     // f.close();
-                    msg_queue.enqueue("PRE-SYNC");
+                    // msg_queue.enqueue("PRE-SYNC");
                     // slamMode = "S-START";
                 }
             }
@@ -2592,7 +2602,7 @@ namespace ORB_SLAM2
         // Here the while(1) won't cause busy waiting as the implementation of receive function is blocking.
         while (1)
         {
-            if (*edgeNumber == 1)
+            if (name == "map")
             {
                 if (!socketObject->checkAlive())
                 {

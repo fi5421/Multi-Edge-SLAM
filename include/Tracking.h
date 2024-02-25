@@ -62,7 +62,7 @@ class Tracking
 
 public:
     Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Map* pMap,
-             KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor);
+             KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor,vector<pair<double,int>>* localMapVector);
 
     // Preprocess the input and call Track(). Extract features and performs stereo matching.
     cv::Mat GrabImageStereo(const cv::Mat &imRectLeft,const cv::Mat &imRectRight, const double &timestamp);
@@ -255,6 +255,7 @@ protected:
     std::thread* keyframe_thread ;
     std::thread* frame_thread ;
     std::thread* map_thread ;
+    std::thread* map_thread2 ;
     std::thread* msg_thread ;
     std::thread* migration_thread;
     // Edge-SLAM: queue declarations
@@ -280,6 +281,9 @@ protected:
 
     // Choosing edge to communicate
     string slamMode;
+
+
+    vector<pair<double,int>>* localMapSize;
 };  
 
 } //namespace ORB_SLAM
