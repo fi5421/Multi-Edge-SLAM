@@ -254,6 +254,7 @@ protected:
     std::thread* keyframe_thread ;
     std::thread* frame_thread ;
     std::thread* map_thread ;
+    std::thread* map_thread2 ;
     // Edge-SLAM: queue declarations
     moodycamel::BlockingConcurrentQueue<std::string> keyframe_queue;
     moodycamel::BlockingConcurrentQueue<std::string> frame_queue;

@@ -206,7 +206,7 @@ namespace ORB_SLAM2
 
         port_number++;
         cout << "Keyframe thread created " << port_number << endl;
-        getline(cin, dummy);
+        // getline(cin, dummy);
         // cout<<std::format("Frame Connection port Edge1 {} Edge2 {}\n",port_number,port_number+1);
         cout << "Frame Connection port Edge1 " << port_number << " Edge2 " << port_number + 1 << endl;
 
@@ -224,7 +224,7 @@ namespace ORB_SLAM2
 
         port_number++;
         cout << "Frame thread created " << port_number << endl;
-        getline(cin, dummy);
+        // getline(cin, dummy);
         // cout<<std::format("Map Connection port Edge1 {} Edge2 {}\n",port_number,port_number+1);
         cout << "Map Connection port Edge1 " << port_number << " Edge2 " << port_number + 1 << endl;
 
@@ -239,6 +239,7 @@ namespace ORB_SLAM2
         map_socket2->sendConnectionRequest();
 
         map_thread = new thread(&ORB_SLAM2::Tracking::tcp_receive, &map_queue, map_socket, 1, "map", map_socket2, edgeNumberPointer);
+        map_thread2 = new thread(&ORB_SLAM2::Tracking::tcp_receive, &map_queue, map_socket, 1, "map2", map_socket2, edgeNumberPointer);
 
         // Edge-SLAM: debug
         cout << "log,Tracking::Tracking,done" << endl;
@@ -2381,7 +2382,7 @@ namespace ORB_SLAM2
         // Here the while(1) won't cause busy waiting as the implementation of receive function is blocking.
         while (1)
         {
-            if (*edgeNumber == 1)
+            if (name=="map")
             {
                 if (!socketObject->checkAlive())
                 {
