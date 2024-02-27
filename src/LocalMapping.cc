@@ -358,7 +358,7 @@ namespace ORB_SLAM2
                 auto dCount = duration.count();
 
                 // Send relocalization map
-                if ((dCount > RELOC_FREQ) && (mpMap->KeyFramesInMap() > 0) && (msRelocStatus) && (msRelocNewFFlag) && (!CheckReset()))
+                if ((slamMode != "S-START") && (dCount > RELOC_FREQ) && (mpMap->KeyFramesInMap() > 0) && (msRelocStatus) && (msRelocNewFFlag) && (!CheckReset()))
                 {
                     sendRelocMapUpdate();
                 }

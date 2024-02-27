@@ -994,17 +994,17 @@ namespace ORB_SLAM2
                 mlpReferences.push_back(mlpReferences.back());
                 mlFrameTimes.push_back(mlFrameTimes.back());
                 mlbLost.push_back(mState == LOST);
-            }
+            }            
 
             // Edge-SLAM: debug
-            if (mCurrentFrame.mnId % 25 == 0)
+            if (mCurrentFrame.mnId % 10 == 0)
             {
-                cout << "log,Tracking::Track,end process frame " << mCurrentFrame.mnId <<"\nmap size: "<<mpMap->KeyFramesInMap()<< endl;
+                cout << "log,Tracking::Track,end process frame " << mCurrentFrame.mnId <<endl;
             }
 
             localMapSize->push_back(std::make_pair(mCurrentFrame.mTimeStamp,mpMap->KeyFramesInMap() ));
 
-            if (mCurrentFrame.mnId > 374)
+            if (mCurrentFrame.mnId > 365)
             {
                 if (slamMode == "NORMAL")
                 {
@@ -1012,12 +1012,12 @@ namespace ORB_SLAM2
                     // f.open("myLogs_Tracking.txt", std::ios::app);
                     // f << "-------------START PRE-SYNCHRONIZATION at time " << std::fixed << setprecision(6) <<  mCurrentFrame.mTimeStamp << "-------------" << endl;
                     // f.close();
-                    // msg_queue.enqueue("PRE-SYNC");
-                    // slamMode = "S-START";
+                    msg_queue.enqueue("PRE-SYNC");
+                    slamMode = "S-START";
                 }
             }
 
-            if (mCurrentFrame.mnId > 375 & edgeNumber != 2)
+            if (mCurrentFrame.mnId > 375 && edgeNumber != 2)
             {
                 edgeNumber = 2;
                 msg_queue.enqueue("HANDOVER");
@@ -2676,4 +2676,5 @@ namespace ORB_SLAM2
         frame_queue.enqueue("exit");
     }
 
-} // namespace ORB_SLAM
+}
+ // namespace ORB_SLAM
