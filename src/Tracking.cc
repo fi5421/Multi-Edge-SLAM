@@ -240,6 +240,7 @@ namespace ORB_SLAM2
         map_socket2->sendConnectionRequest();
 
         map_thread = new thread(&ORB_SLAM2::Tracking::tcp_receive, &map_queue, map_socket, 1, "map", map_socket2, edgeNumberPointer);
+        map_thread2 = new thread(&ORB_SLAM2::Tracking::tcp_receive, &map_queue, map_socket, 1, "map2", map_socket2, edgeNumberPointer);
 
         cout << "making migration thread\n";
         port_number++;
@@ -2560,7 +2561,7 @@ namespace ORB_SLAM2
         // Here the while(1) won't cause busy waiting as the implementation of receive function is blocking.
         while (1)
         {
-            if (*edgeNumber == 1)
+            if (name=="map")
             {
                 if (!socketObject->checkAlive())
                 {
@@ -2573,6 +2574,7 @@ namespace ORB_SLAM2
 
                 if (!msg.empty())
                 {
+                    cout<<"map socket received msg"<<endl;
                     if (messageQueue->size_approx() >= maxQueueSize)
                     {
                         string data;

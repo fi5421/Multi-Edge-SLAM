@@ -87,6 +87,8 @@ namespace ORB_SLAM2
             activeEdge = true;
         }
 
+        cout<<"Active Edge: "<<activeEdge<<" on Edge "<<edgeNumber<<endl;
+
         // Setting up connections
         string ip;
         string port_number;
@@ -776,6 +778,8 @@ namespace ORB_SLAM2
                 auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(msLastMUStop - msLastMUStart);
                 auto dCount = duration.count();
 
+                // cout<<"Active Edge local map "<<activeEdge<<endl;
+                // cout<<"dCount "<<dCount<<endl;
                 // Send relocalization map
                 if (activeEdge && (dCount > RELOC_FREQ) && (mpMap->KeyFramesInMap() > 0) && (msRelocStatus) && (msRelocNewFFlag) && (!CheckReset()))
                 {

@@ -254,6 +254,7 @@ protected:
     std::thread* keyframe_thread ;
     std::thread* frame_thread ;
     std::thread* map_thread ;
+    std::thread* map_thread2 ;
 
     std::thread* migration_thread ;
 
@@ -282,7 +283,7 @@ protected:
     int sync_mode=0;
 
 
-    int sync_start=275;
+    int sync_start=345;
     int switch_frame=375;
 
 
