@@ -42,7 +42,8 @@ public:
     bool checkAlive(); // Check termination flag
     void setConnTimeOut(bool timeOut); // Set connection timeout flag
     bool checkConnTimeOut(); // Check connection timeout flag
-
+    
+    int delay=0;
 private:
     int mySocket, otherSocket; // Socket descriptors
     int socketHandle; // SocketHandle is used to manage send and recieve address for send and recieve

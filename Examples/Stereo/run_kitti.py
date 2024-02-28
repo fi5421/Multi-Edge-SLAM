@@ -313,7 +313,7 @@ while run_count<runs:
         server_thread = threading.Thread(target=server, args=(portStart,event,))
         server_thread.start()
         
-        # time.sleep(1)
+        time.sleep(2)
 
         server2_thread = threading.Thread(target=server, args=(portStart+1,event,'server2'))
         server2_thread.start()

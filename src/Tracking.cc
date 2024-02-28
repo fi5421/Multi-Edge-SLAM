@@ -240,6 +240,7 @@ namespace ORB_SLAM2
         map_socket2->sendConnectionRequest();
 
         map_thread = new thread(&ORB_SLAM2::Tracking::tcp_receive, &map_queue, map_socket, 1, "map", map_socket2, edgeNumberPointer);
+        map_thread2 = new thread(&ORB_SLAM2::Tracking::tcp_receive, &map_queue, map_socket, 1, "map2", map_socket2, edgeNumberPointer);
 
         // Edge-SLAM: debug
         cout << "log,Tracking::Tracking,done" << endl;
@@ -976,7 +977,7 @@ namespace ORB_SLAM2
             if (mCurrentFrame.mnId > sync_start && sync_mode != 1 && mCurrentFrame.mnId < switch_frame)
             {
                 cout<<"SYNC SIGNAL SENT\n";
-                // frame_queue.enqueue("Start Sync");
+                frame_queue.enqueue("Start Sync");
                 sync_mode = 1;
             }
 
@@ -2399,7 +2400,7 @@ namespace ORB_SLAM2
         // Here the while(1) won't cause busy waiting as the implementation of receive function is blocking.
         while (1)
         {
-            if (*edgeNumber == 1)
+            if (name=="map")
             {
                 if (!socketObject->checkAlive())
                 {

@@ -125,6 +125,8 @@ namespace ORB_SLAM2
             subset_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &keyframe_queue, map_subset_socket, 3, "subset map");
         }
 
+        cout<<"subset port connected on "<<edgeNumber<<"\n";
+
         // map_subset_queue_send.enqueue("Temp Message");
 
         // Keyframe connection
@@ -132,6 +134,7 @@ namespace ORB_SLAM2
         keyframe_socket = new TcpSocket(ip, std::stoi(port_number));
         keyframe_socket->waitForConnection();
         keyframe_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &keyframe_queue, keyframe_socket, 2, "keyframe");
+        cout<<"keyframe port connected on "<<edgeNumber<<"\n";
         // Frame connection
         // cout << "Enter the port number used for frame connection: ";
         // getline(cin, port_number);
@@ -140,6 +143,7 @@ namespace ORB_SLAM2
         frame_socket = new TcpSocket(ip, port_int);
         frame_socket->waitForConnection();
         frame_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &frame_queue, frame_socket, 1, "frame");
+        cout<<"frame port connected on "<<edgeNumber<<"\n";
         // Map connection
         // cout << "Enter the port number used for map connection: ";
         // getline(cin, port_number);
@@ -148,6 +152,7 @@ namespace ORB_SLAM2
         map_socket = new TcpSocket(ip, port_int);
         map_socket->waitForConnection();
         map_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_send, &map_queue, map_socket, "map");
+        cout<<"map port connected on "<<edgeNumber<<"\n";
 
         mnLastKeyFrameId = 0;
 
