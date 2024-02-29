@@ -281,6 +281,10 @@ namespace ORB_SLAM2
                         }
                     }
                     keyframeCallback(msg);
+                    if (mpMap->KeyFramesInMap()==1){
+                        cout<<"setting mustart"<<endl;
+                        msLastMUStart=std::chrono::high_resolution_clock::now();
+                    }
                 }
                 else if (frame_queue.try_dequeue(msg))
                 {

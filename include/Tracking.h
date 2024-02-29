@@ -281,7 +281,7 @@ protected:
 
     // Choosing edge to communicate
     string slamMode;
-
+    vector<pair<double,int>>* localMapSize;
 
     int sync_start=365;
 };  

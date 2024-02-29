@@ -997,14 +997,14 @@ namespace ORB_SLAM2
             }            
 
             // Edge-SLAM: debug
-            if (mCurrentFrame.mnId % 10 == 0)
+            if (mCurrentFrame.mnId % 5 == 0)
             {
                 cout << "log,Tracking::Track,end process frame " << mCurrentFrame.mnId <<endl;
             }
 
             localMapSize->push_back(std::make_pair(mCurrentFrame.mTimeStamp,mpMap->KeyFramesInMap() ));
 
-            if (mCurrentFrame.mnId > 365)
+            if (mCurrentFrame.mnId > 325)
             {
                 if (slamMode == "NORMAL")
                 {
