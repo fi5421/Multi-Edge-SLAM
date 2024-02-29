@@ -42,7 +42,7 @@ public:
     void setAlive(bool alive); // Set termination flag
     bool checkAlive(); // Check termination flag
     void setConnTimeOut(bool timeOut); // Set connection timeout flag
-    bool checkConnTimeOut(); // Check connection timeout flag
+    int delay=0;
     int delay=10;
 
 private:

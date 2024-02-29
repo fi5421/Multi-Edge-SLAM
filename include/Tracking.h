@@ -283,7 +283,7 @@ protected:
     string slamMode;
 
 
-    vector<pair<double,int>>* localMapSize;
+    int sync_start=365;
 };  
 
 } //namespace ORB_SLAM
