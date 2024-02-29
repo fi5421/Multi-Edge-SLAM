@@ -188,6 +188,7 @@ protected:
     std::thread* keyframe_thread ;
     std::thread* frame_thread ;
     std::thread* map_thread ;
+    std::thread* map_thread2 ;
 
     // Map Subset thread
     std::thread* subset_thread;

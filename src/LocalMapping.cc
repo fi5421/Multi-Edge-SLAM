@@ -150,6 +150,7 @@ namespace ORB_SLAM2
         map_socket = new TcpSocket(ip, port_int);
         map_socket->waitForConnection();
         map_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_send, &map_queue, map_socket, "map");
+        map_thread2 = new thread(&ORB_SLAM2::LocalMapping::tcp_send, &map_queue, map_socket, "map2");
 
         mnLastKeyFrameId = 0;
 
@@ -602,7 +603,7 @@ namespace ORB_SLAM2
                         if (msg == "Start Sync")
                         {
                             sync1=true;
-                            startSync();
+                            // startSync();
                         }else if (msg == "Edge 1 End Sync")
                         {
                             map_subset_queue_send.enqueue("End Sync");
