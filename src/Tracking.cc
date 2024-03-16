@@ -241,6 +241,8 @@ namespace ORB_SLAM2
 
         map_thread = new thread(&ORB_SLAM2::Tracking::tcp_receive, &map_queue, map_socket, 1, "map", map_socket2, edgeNumberPointer);
 
+        map_thread2 = new thread(&ORB_SLAM2::Tracking::tcp_receive, &map_queue, map_socket, 1, "map2", map_socket2, edgeNumberPointer);
+
         // Edge-SLAM: debug
         cout << "log,Tracking::Tracking,done" << endl;
     }
@@ -2353,7 +2355,7 @@ namespace ORB_SLAM2
                     if (socketObject->sendMessage(msg1) == 1)
                     {
                         success = true;
-                        msg.clear();
+                        msg1.clear();
 
                         // Edge-SLAM: debug
                         cout << "log,Tracking::tcp_send,sent " << name << endl;
@@ -2412,7 +2414,7 @@ namespace ORB_SLAM2
                     if (socketObject->sendMessage(msg1) == 1)
                     {
                         success = true;
-                        msg.clear();
+                        msg1.clear();
 
                         // Edge-SLAM: debug
                         cout << "log,Tracking::tcp_send,sent " << name << endl;
@@ -2461,7 +2463,7 @@ namespace ORB_SLAM2
         // Here the while(1) won't cause busy waiting as the implementation of receive function is blocking.
         while (1)
         {
-            if (*edgeNumber == 1)
+            if (name=="map")
             {
                 if (!socketObject->checkAlive())
                 {

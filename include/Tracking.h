@@ -254,6 +254,7 @@ protected:
     std::thread* keyframe_thread ;
     std::thread* frame_thread ;
     std::thread* map_thread ;
+    std::thread* map_thread2 ;
     // Edge-SLAM: queue declarations
     moodycamel::BlockingConcurrentQueue<std::string> keyframe_queue;
     moodycamel::BlockingConcurrentQueue<std::string> frame_queue;
@@ -275,7 +276,7 @@ protected:
     int sync_mode=0;
 
 
-    int sync_start=325;
+    int sync_start=365;
     int switch_frame=375;
 
 

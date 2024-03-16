@@ -566,6 +566,7 @@ namespace ORB_SLAM2
                         }
                         else if (msg == "Active Edge")
                         {
+                            cout<<"Active Edge set\n";
                             activeEdge = true;
                         }
                     }
@@ -602,8 +603,10 @@ namespace ORB_SLAM2
                         cout << "Message on Frame Socket " << msg << endl;
                         if (msg == "Start Sync")
                         {
+                            cout<<"setting sync1 true \n";
                             sync1=true;
-                            // startSync();
+                            map_subset_queue_send.enqueue("Start Sync");
+                            startSync();
                         }else if (msg == "Edge 1 End Sync")
                         {
                             map_subset_queue_send.enqueue("End Sync");
@@ -611,7 +614,11 @@ namespace ORB_SLAM2
                             activeEdge=false;
                             continue;
                             
+                        }else if(msg=="Active Edge"){
+                            cout<<"Active Edge set\n";
+                            activeEdge=true;
                         }
+
                     }
                     else
                     {
@@ -728,8 +735,9 @@ namespace ORB_SLAM2
             }
 
             //sending subsequent
-
+            // cout<<"SYNC1: "<<sync1<<endl;
             if(sync1){
+                // cout<<"SENDING SUBSEQUENT\n";
                 sendSubsequent(mpCurrentKeyFrame->mnId);
             }
 
@@ -752,6 +760,7 @@ namespace ORB_SLAM2
                 // Send regular local map update
                 else if (activeEdge && (dCount > MAP_FREQ) && (mpMap->KeyFramesInMap() > 0) && (msNewKFFlag) && (!CheckReset()))
                 {
+                    cout<<"sending map update\n";
                     sendLocalMapUpdate();
                 }
             }
@@ -2020,7 +2029,7 @@ namespace ORB_SLAM2
         cout << "Starting Sync" << endl;
 
         std::vector<std::string> KFsData;
-        map_subset_queue_send.enqueue("Start Sync");
+        // map_subset_queue_send.enqueue("Start Sync");
 
         // If map size is less than localMapSize, send the whole map, else send the lastest of size localMapSize
         long unsigned localMapSize = Subset_Map_Size;
@@ -2155,7 +2164,7 @@ namespace ORB_SLAM2
         // cout<<"Pushed ";
         while (!KF_stack.empty())
         {
-            map_subset_queue_send.enqueue(KF_stack.top());
+            // map_subset_queue_send.enqueue(KF_stack.top());
             // cout<<KF_stack.top().size()<<" ";
             KF_stack.pop();
         }
