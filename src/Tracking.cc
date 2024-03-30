@@ -49,7 +49,7 @@ namespace ORB_SLAM2
     const unsigned int Tracking::TIME_KF = 300;
     unsigned int Tracking::mnMapUpdateLastKFId = 0;
     bool Tracking::mapUpToDate = false;
-    const unsigned int Tracking::LOCAL_MAP_SIZE = 6;
+    const unsigned int Tracking::LOCAL_MAP_SIZE = 12;
     bool Tracking::refKFSet = false;
 
     // Edge-SLAM: measure
@@ -170,31 +170,45 @@ namespace ORB_SLAM2
         string ip, server_ip;
         string port_number, server_port;
         cout << "Enter the device IP address: ";
-        getline(cin, ip);
-        cout << "Enter the server IP address: ";
-        getline(cin, server_ip);
+        // getline(cin, ip);
+        // cout << "Enter the server IP address: ";
+        // getline(cin, server_ip);
+
+        ip="127.0.0.1";
+        server_ip=ip;
+
+    
         // Edge-SLAM: keyframe connection
         cout << "Enter the port number used for keyframe connection: ";
         getline(cin, port_number);
         cout << "Enter the server port number used for keyframe connection: ";
-        getline(cin, server_port);
-        keyframe_socket = new TcpSocket(ip, std::stoi(port_number), server_ip, std::stoi(server_port));
+        // getline(cin, server_port);
+        server_port=port_number;
+        int port_int=std::stoi(port_number);
+
+        keyframe_socket = new TcpSocket(ip, port_int, server_ip, port_int);
         keyframe_socket->sendConnectionRequest();
         keyframe_thread = new thread(&ORB_SLAM2::Tracking::tcp_send, &keyframe_queue, keyframe_socket, "keyframe");
         // Edge-SLAM: frame connection
         cout << "Enter the port number used for frame connection: ";
-        getline(cin, port_number);
+        // getline(cin, port_number);
+        // port_number++;
+        port_int++;
         cout << "Enter the server port number used for frame connection: ";
-        getline(cin, server_port);
-        frame_socket = new TcpSocket(ip, std::stoi(port_number), server_ip, std::stoi(server_port));
+        // getline(cin, server_port);
+        // server_port++;
+        frame_socket = new TcpSocket(ip, port_int, server_ip, port_int);
         frame_socket->sendConnectionRequest();
         frame_thread = new thread(&ORB_SLAM2::Tracking::tcp_send, &frame_queue, frame_socket, "frame");
         // Edge-SLAM: map connection
         cout << "Enter the port number used for map connection: ";
-        getline(cin, port_number);
+        // getline(cin, port_number);
         cout << "Enter the server port number used for map connection: ";
-        getline(cin, server_port);
-        map_socket = new TcpSocket(ip, std::stoi(port_number), server_ip, std::stoi(server_port));
+        // getline(cin, server_port);
+        // server_port++;
+        // port_number++;
+        port_int++;
+        map_socket = new TcpSocket(ip, port_int, server_ip, port_int);
         map_socket->sendConnectionRequest();
         map_thread = new thread(&ORB_SLAM2::Tracking::tcp_receive, &map_queue, map_socket, 1, "map");
 

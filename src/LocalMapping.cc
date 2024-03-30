@@ -32,8 +32,8 @@ std::chrono::high_resolution_clock::time_point LocalMapping::msLastMUStart = std
 std::chrono::high_resolution_clock::time_point LocalMapping::msLastMUStop;
 
 // Edge-SLAM: map update variables
-const int LocalMapping::MAP_FREQ=5000;
-const int LocalMapping::KF_NUM=6;
+const int LocalMapping::MAP_FREQ=15000;
+const int LocalMapping::KF_NUM=12;
 const int LocalMapping::CONN_KF=2;
 bool LocalMapping::msNewKFFlag=false;
 stack<long unsigned int> LocalMapping::msLatestKFsId;
@@ -65,25 +65,33 @@ LocalMapping::LocalMapping(Map *pMap, KeyFrameDatabase* pKFDB, ORBVocabulary* pV
     string ip;
     string port_number1,port_number2,port_number3;
     // cout << "Enter the device IP address: ";
-    getline(cin, ip);
+    // getline(cin, ip);
+    ip="127.0.0.1";
     cout<<"IP address: "<<ip<<endl;
     // Keyframe connection
     getline(cin, port_number1);
-    getline(cin, port_number2);
-    getline(cin, port_number3);
+    // getline(cin, port_number2);
+    // getline(cin, port_number3);
+    // port_number++;
+    // port_number2=port_number1+1;
+    // port_number3=port_number1+2;
+
+    int port_int=std::stoi(port_number1);
     cout << "Enter the port number used for keyframe connection: ";
     cout<<"Port number: "<<port_number1<<" "<<port_number2<<" "<<port_number3<<endl;
-    keyframe_socket = new TcpSocket(ip, std::stoi(port_number1));
+    keyframe_socket = new TcpSocket(ip, port_int);
     keyframe_socket->waitForConnection();
     keyframe_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &keyframe_queue, keyframe_socket, 2, "keyframe");
     // Frame connection
+    port_int++;
     cout << "Enter the port number used for frame connection: ";
-    frame_socket = new TcpSocket(ip, std::stoi(port_number2));
+    frame_socket = new TcpSocket(ip, port_int);
     frame_socket->waitForConnection();
     frame_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_receive, &frame_queue, frame_socket, 1, "frame");
     // Map connection
+    port_int++;
     cout << "Enter the port number used for map connection: ";
-    map_socket = new TcpSocket(ip, std::stoi(port_number3));
+    map_socket = new TcpSocket(ip, port_int);
     map_socket->waitForConnection();
     map_thread = new thread(&ORB_SLAM2::LocalMapping::tcp_send, &map_queue, map_socket, "map");
 

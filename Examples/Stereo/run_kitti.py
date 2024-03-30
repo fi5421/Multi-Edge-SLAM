@@ -7,14 +7,13 @@ import re
 import pandas as pd
 import time
 import shutil
-import matplotlib.pyplot as plt
+import logging
 import json
-
-# suck a dick
+# import progressbar as Bar
+import matplotlib.pyplot as plt
 
 global track_lost
 track_lost=False
-
 
 def plotKeyFrameGeneration(resultsPath, groundtruthPath):
     # Reading groundtruth
@@ -113,7 +112,6 @@ def plotKeyFrameGeneration(resultsPath, groundtruthPath):
     figFilename = resultsPath.replace('.txt', '') + '.png'
     plt.savefig(os.path.join(f'results/{resultsPath}', figFilename))
 
-
 def server(port,event,server='server'):
     print("Server started")
     args=["./stereo_kitti" ,'../../Vocabulary/ORBvoc.txt' ,'KITTI00-02.yaml' ,server]
@@ -125,16 +123,16 @@ def server(port,event,server='server'):
         subset_port=port-2
     input=['127.0.0.1\n',str(port)+'\n',str(port+1)+'\n',str(port+2)+'\n',str(port-1),str(subset_port)+'\n']
     count=0
-    print('writing',input[0])
-    child_process.stdin.write(bytes(input[0],'utf-8'))
-    # print('writing',str(subset_port)+'\n'+input[1])
-    # child_process.stdin.write(bytes(input[-1],'utf-8'))
+    # print('writing',input[0])
+    # child_process.stdin.write(bytes(input[0],'utf-8'))
+    # print('writing',str(subset_port)+'\n'+input[1])/
     print('writing',input[1])
+    # child_process.stdin.write(bytes(input[-1],'utf-8'))
     child_process.stdin.write(bytes(input[1],'utf-8'))
-    print('writing',input[2])
-    child_process.stdin.write(bytes(input[2],'utf-8'))
-    print('writing',input[3])   
-    child_process.stdin.write(bytes(input[3],'utf-8'))
+    # print('writing',input[2])
+    # child_process.stdin.write(bytes(input[2],'utf-8'))
+    # print('writing',input[3])   
+    # child_process.stdin.write(bytes(input[3],'utf-8'))
     child_process.stdin.flush()
     child_process.stdin.close()
     print('here2')
@@ -165,8 +163,8 @@ def client(port,dataset,event):
     print('making subporcess')
     child_process=subprocess.Popen(args,stdin=subprocess.PIPE,stdout=subprocess.PIPE)
     print('subprocess made')
-    inp='127.0.0.1'+'\n'+'127.0.0.1'+'\n'+str(port)+'\n'+str(port)+'\n'+str(port+1)+'\n'+str(port+1)+'\n'+str(port+2)+'\n'+str(port+2)+'\n'
-    # inp=str(port)+'\n'#+'1\n'
+    # inp='127.0.0.1'+'\n'+'127.0.0.1'+'\n'+str(port)+'\n'+str(port)+'\n'+str(port+1)+'\n'+str(port+1)+'\n'+str(port+2)+'\n'+str(port+2)+'\n'
+    inp=str(port)+'\n'#+'1\n'
     out,err=child_process.communicate(input=bytes(inp,'utf-8'))
     out=out.decode('utf-8').split('\n')
     for i in out:
@@ -185,7 +183,9 @@ def client(port,dataset,event):
     #         break
    
     child_process.wait()
-    print('client finished')
+    return
+    print('client returned')
+    return child_process
     return
 
 def run_evo(gt,traj='KeyFrameTrajectory_TUM_Format1.txt'):
@@ -214,139 +214,224 @@ def run_evo(gt,traj='KeyFrameTrajectory_TUM_Format1.txt'):
     # print(out[-7:])
     return out[-7:]+[num_pose]
 
+# time_text=time.strftime("%Y%m%d-%H%M%S")
+if len(sys.argv)<6:
+    print('Usage1: python3 run_kitti.py dataset port_start gt runs comp_gt optional: branch switch sync time_stamp local_map_size map_freq')
+    exit()
 
 
+print(sys.argv)
+if len(sys.argv)>6:
+    time_text=sys.argv[9]
+else:
+    time_text=time.strftime("%d-%m-%Y-%H:%M:%S")
 
 
+# time_text=time.strftime("%d-%m-%Y-%H:%M:%S")
+dir='results/'+time_text+'/'
+# logging.basicConfig(filename=dir+'run_kitti.log',level=logging.DEBUG)
 
 
-
-
-
-
-if len(sys.argv) != 5:
-    print("Usage: python run_kitti.py <dataset> <portStart> <gt> <run_times>")
-    sys.exit(1)
 
 dataset = sys.argv[1]
 portStart = int(sys.argv[2])
 index=['max','mean','median','min','rmse','sse','std','num pose','numKFS1','numKFS2','totalKFS']
 df=pd.DataFrame(columns=index)
-print(df)
+# logging.debug(df)
 
 runs=int(sys.argv[4])
 
-proc=subprocess.Popen(['git','branch'])
-proc.wait()
-branch=input('enter branch name: ')
+# proc=subprocess.Popen(['git','branch'])
+# proc.wait()
+if len(sys.argv)>6:
+    branch=sys.argv[6]
+else:
+    branch=input('enter branch name: ')
+# branch=input('enter branch name: ')
+
 
 gt=sys.argv[3].split('/')[-1]
+comp_gt=sys.argv[5]
 
 
-print('dataset',dataset)
+# logging.debug('\t'+ dataset.to_string().replace('\n', '\n\t'))
 datasetl=dataset.split('/')[-3:-1]
 datasetl='/'.join(datasetl)
 
 
-# time_text=time.strftime("%Y%m%d-%H%M%S")
-time_text=time.strftime("%d-%m-%Y_%H:%M:%S")
+
+if len(sys.argv)>6:
+    switch=sys.argv[7]
+else:
+    switch=input('swith frame:')
+
+if len(sys.argv)>6:
+    sync=sys.argv[8]
+else:
+    sync=input('sync frame:')
+
+map_freq=5000
+map_size=6
+
+if len(sys.argv)>10:
+    map_size=sys.argv[10]
 
 
-switch=input('swith frame:')
-sync=input('sync frame:')
+if len(sys.argv)>11:
+    map_freq=sys.argv[11]
+
+    
 text_l=[f'branch\t{branch}',f'dataset\t{datasetl}',f'gt\t{gt}',f'runs\t{runs}',f'switch\t{switch}',f'sync\t{sync}',f'time\t{time_text}']
-text_d={'branch':branch,'dataset':datasetl,'gt':gt,'runs':runs,'switch':switch,'sync':sync,'time':time_text}
+if not os.path.exists(dir):
+    os.makedirs(dir)
+    print("making",dir)
+
+dir_traj=dir+'traj/'
+if not os.path.exists(dir_traj):
+    os.makedirs(dir_traj)
+logging.basicConfig(level=logging.DEBUG,filename=dir+'run_kitti.log',filemode='w')
+
+text_d={'branch':branch,'dataset':datasetl,'gt':gt,'runs':runs,'switch':switch,'sync':sync,'time':time_text, "map_size":map_size,"map_freq":map_freq, "port":portStart}
 
 # dir='metadata'
 # if not os.path.exists(dir):
 #     os.makedirs(dir)
 
+print(text_d)
+# exit()
+
 run_count=0
 error_count=0
 track_b4=0
 
+# class SlowBar(Bar):
+#     max=runs
+#     message="Slamming"
+#     suffix = '%(percent).1f%%  '
+#     @property
+#     def remaining_minutes(self):
+#         return self.eta // 60
 
-dir='results/'+time_text+'/'
-if not os.path.exists(dir):
-    os.makedirs(dir)
-
-dir_traj=dir+'traj/'
-if not os.path.exists(dir_traj):
-    os.makedirs(dir_traj)
+# bar = Bar('SLAMing', max=runs,fill="F", suffix='%(index)d/%(max)d - %(percent).1f%% - %(eta)ds')
 # filename_csv=input('Enter filename for csv: ')
 
+
+print("switch", switch, "sync", sync, 'branch', branch,'time_stamp',time_text)
+# exit()
+gt=sys.argv[3]
+
 while run_count<runs:
-    
-    track_lost=False
-
-    event=threading.Event()
-    server_thread = threading.Thread(target=server, args=(portStart,event,))
-    server_thread.start()
-    
-    time.sleep(1)
-
-    # server2_thread = threading.Thread(target=server, args=(portStart+1,event,'server2'))
-    # server2_thread.start()
-
-    time.sleep(5)
-
-    client_thread = threading.Thread(target=client, args=(portStart,dataset,event,))
-    client_thread.start()
-
-    # print('waiting for threads to finish')
-    client_thread.join()
-    # print('client joined')
-    event.set()
-    server_thread.join()
-    # server2_thread.join()
-    print('server joined')
-    gt=sys.argv[3]
-
-
-    file=open('KeyFrameTrajectory_TUM_Format1.txt','r')
-    lines1=file.readlines()
-    num1=len(lines1)
-    file.close()
-
-    # file=open('KeyFrameTrajectory_TUM_Format2.txt','r')
-    # lines2=file.readlines()
-    # num2=len(lines2)
-    num2=0
-    # file.close()
-
-    # file=open('KeyFrameTrajectory_TUM_Format_combined.txt','w')
-    # file.writelines(lines1+lines2)
-    # file.close()
-
-    traj_path=f"{dir_traj}{run_count}"
-
-    if not os.path.exists(traj_path):
-        os.makedirs(traj_path)
-    print(traj_path)
-
-    shutil.copy('KeyFrameTrajectory_TUM_Format1.txt',f"{traj_path}/KeyFrameTrajectory_TUM_Format1.txt")
-    # shutil.copy('KeyFrameTrajectory_TUM_Format2.txt',f"{traj_path}/KeyFrameTrajectory_TUM_Format2.txt")
-    # shutil.copy('KeyFrameTrajectory_TUM_Format_combined.txt',f"{traj_path}/KeyFrameTrajectory_TUM_Format_combined.txt")
-
     try:
-        evo_res=run_evo(gt,traj='KeyFrameTrajectory_TUM_Format1.txt')
-        print('res',evo_res)
-    except:
-        evo_res=['error in evo' for i in range(8)]
     
+        track_lost=False
 
-    if track_lost:
-        track_b4+=1
+        event=threading.Event()
+        server_thread = threading.Thread(target=server, args=(portStart,event,))
+        server_thread.start()
+        
+        # # time.sleep(1)
 
-    if(evo_res[0]=='error in evo'):
-        error_count+=1
-        print('ERROR IN EVO')
-        print(f'Run Count:\t{run_count}\n',f'Error Count:\t{error_count}\n',f'Track Lost Before Handover:\t{track_b4}\n')
+        # # server2_thread = threading.Thread(target=server, args=(portStart+1,event,'server2'))
+        # # server2_thread.start()
+
+        time.sleep(5)
+
+        client_thread = threading.Thread(target=client, args=(portStart,dataset,event,))
+        client_thread.start()
+
+        # # loggin.debug('waiting for threads to finish')
+        logging.debug('waiting for client to finish')
+        client_thread.join()
+        logging.debug('client joined')
+        event.set()
+        logging.debug('waiting for server to finish')
+        server_thread.join()
+        # # server2_thread.join()
+        # time.sleep(2)
+        logging.debug('server joined')
+        # time.sleep(2)
+
+        
+
+
+        file=open('KeyFrameTrajectory_TUM_Format1.txt','r')
+        lines1=file.readlines()
+        num1=len(lines1)
+        file.close()
+
+        file=open('KeyFrameTrajectory_TUM_Format2.txt','r')
+        lines2=file.readlines()
+        num2=len(lines2)
+        file.close()
+
+        file=open('KeyFrameTrajectory_TUM_Format_combined.txt','w')
+        file.writelines(lines1+lines2)
+        file.close()
+
+
+        try:
+            evo_res=run_evo(gt)
+            logging.debug("evo result")
+            logging.debug(str(evo_res))
+        except:
+            evo_res=['error in evo' for i in range(8)]
+        
+
+        if track_lost:
+            track_b4+=1
+
+        if(evo_res[0]=='error in evo'):
+            error_count+=1
+            logging.debug('ERROR IN EVO')
+            t=f'Run Count:\\t{run_count}\\n',f'Error Count:\\t{error_count}\\n',f'Track Lost Before Handover:\\t{track_b4}\\n'
+            logging.debug('Run Count:\t%d\n Error Count:\t%d\n Track Lost Before Handover:\t%d\n',run_count,error_count,track_b4)
+
+            portStart+=10
+            text_d['Run Count']=run_count
+            text_d['Error Count']=error_count
+            text_d['Track Lost Before Handover']=track_b4
+            text_d['port']=portStart
+            if not os.path.exists(dir):
+                os.makedirs(dir)
+
+            json_obj=json.dumps(text_d, indent=4)
+
+            # file=open(dir+'/'+time_text+'.txt','w')
+            # file.writelines(text_l)
+            # file.close()
+
+            with open(dir+'/'+time_text+'.txt','w') as file:
+                file.write(json_obj)
+                file.close()
+
+            continue
+        traj_path=f"{dir_traj}{run_count}"
+
+        if not os.path.exists(traj_path):
+            os.makedirs(traj_path)
+        logging.debug(traj_path)
+
+        shutil.copy('KeyFrameTrajectory_TUM_Format1.txt',f"{traj_path}/KeyFrameTrajectory_TUM_Format1.txt")
+        # shutil.copy('KeyFrameTrajectory_TUM_Format2.txt',f"{traj_path}/KeyFrameTrajectory_TUM_Format2.txt")
+        shutil.copy('KeyFrameTrajectory_TUM_Format_combined.txt',f"{traj_path}/KeyFrameTrajectory_TUM_Format_combined.txt")
+        # shutil.copy('localMapData.txt',f"{traj_path}/localMapData.txt")
+        run_count+=1
+
+        # logging.debug(evo_res+[num])
+        df.loc[-1]=evo_res+[num1,num2,num1+num2]
+        df.index = df.index + 1
+        t=f'Run Count:\t{run_count}\n',f'Error Count:\t{error_count}\n',f'Track Lost Before Handover:\t{track_b4}\n'
+        logging.debug('Run Count:\t%d\n Error Count:\t%d\n Track Lost Before Handover:\t%d\n',run_count,error_count,track_b4)
 
         portStart+=10
+
         text_d['Run Count']=run_count
         text_d['Error Count']=error_count
         text_d['Track Lost Before Handover']=track_b4
+        text_d['port']=portStart
+
+        text_l=[i+'\n' for i in text_l]
+        # dir='metadata'
         if not os.path.exists(dir):
             os.makedirs(dir)
 
@@ -358,67 +443,44 @@ while run_count<runs:
 
         with open(dir+'/'+time_text+'.txt','w') as file:
             file.write(json_obj)
+            print("file written",time_text)
             file.close()
 
-        continue
-    run_count+=1
-
-    # print(evo_res+[num])
-    df.loc[-1]=evo_res+[num1,num2,num1+num2]
-    df.index = df.index + 1
-
-    df_t=df.transpose()
-    df_t.to_csv(dir+'/'+time_text+'.csv',sep='\t')
-
-    text_d['Run Count']=run_count
-    text_d['Error Count']=error_count
-    text_d['Track Lost Before Handover']=track_b4
-    json_obj=json.dumps(text_d, indent=4)
-
-    # file=open(dir+'/'+time_text+'.txt','w')
-    # file.writelines(text_l)
-    # file.close()
-
-    with open(dir+'/'+time_text+'.txt','w') as file:
-        file.write(json_obj)
-        file.close()
-
-    print(f'Run Count:\t{run_count}\n',f'Error Count:\t{error_count}\n',f'Track Lost Before Handover:\t{track_b4}\n')
-
-    portStart+=10
-
-    print(df)
+        logging.debug(df.to_string())
 
 
 
-df_t=df.transpose()
-df_t.to_csv(dir+'/'+time_text+'.csv',sep='\t')
+        df_t=df.transpose()
+        df_t.to_csv(dir+'/'+time_text+'.csv',sep='\t')
+        # bar.next()
+    except KeyboardInterrupt:
+        print("KeyboardInterrupt has been caught.")
+        exit=input("input y to exit")
+        if exit=='y':
+            break
+        else:
+            portStart+=10
+            continue
+
+        
 
 
-# text_l+=[f'Run Count:\t{run_count}',f'Error Count:\t{error_count}',f'Track Lost Before Handover:\t{track_b4}']
+for i in text_l:
+    logging.debug(i[:-1])
 
-# text_l=[i+'\n' for i in text_l]
-# # dir='metadata'
-# if not os.path.exists(dir):
-#     os.makedirs(dir)
-# file=open(dir+'/'+time_text+'.txt','w')
-# file.writelines(text_l)
-# file.close()
+# logging.debug('SAVED TO :',time_text+'.csv')
+logging.debug('SAVED TO : %s.csv',time_text)
 
-# for i in text_l:
-#     print(i[:-1])
+dir='results'
+proc=subprocess.Popen(['cat',dir+'/'+time_text+'/'+time_text+'.csv'])
 
-print('SAVED TO :',time_text+'.csv')
+proc.wait()
 
-print(time_text)
-print(gt)
+plotKeyFrameGeneration(time_text, comp_gt)
+
+# bar.finish()
 
 
-# dir='results'
-# proc=subprocess.Popen(['cat',dir+'/'+time_text+'.csv'])
-
-# proc.wait()
-plotKeyFrameGeneration(time_text, gt)
 # os.remove('tab.csv')
 
 
