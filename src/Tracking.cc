@@ -49,7 +49,7 @@ namespace ORB_SLAM2
     const unsigned int Tracking::TIME_KF = 300;
     unsigned int Tracking::mnMapUpdateLastKFId = 0;
     bool Tracking::mapUpToDate = false;
-    const unsigned int Tracking::LOCAL_MAP_SIZE = 12;
+    const unsigned int Tracking::LOCAL_MAP_SIZE = 6;
     bool Tracking::refKFSet = false;
 
     // Edge-SLAM: measure
@@ -62,11 +62,13 @@ namespace ORB_SLAM2
     bool Tracking::msRelocStatus = false;
     const int Tracking::RELOC_FREQ = 500;
 
-    Tracking::Tracking(System *pSys, ORBVocabulary *pVoc, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Map *pMap, KeyFrameDatabase *pKFDB, const string &strSettingPath, const int sensor) : mState(NO_IMAGES_YET), mSensor(sensor), mbOnlyTracking(false), mbVO(false), mpORBVocabulary(pVoc),
+    Tracking::Tracking(System *pSys, ORBVocabulary *pVoc, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Map *pMap, KeyFrameDatabase *pKFDB, const string &strSettingPath, const int sensor,vector<pair<double,int>>* localMapVector) : mState(NO_IMAGES_YET), mSensor(sensor), mbOnlyTracking(false), mbVO(false), mpORBVocabulary(pVoc),
                                                                                                                                                                                                   mpKeyFrameDB(pKFDB), mpInitializer(static_cast<Initializer *>(NULL)), mpSystem(pSys), mpViewer(NULL),
                                                                                                                                                                                                   mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpMap(pMap), mnLastRelocFrameId(0)
     {
         // Load camera parameters from settings file
+
+        localMapSize=localMapVector;
 
         cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
         float fx = fSettings["Camera.fx"];
@@ -934,6 +936,7 @@ namespace ORB_SLAM2
 
             // Edge-SLAM: debug
             cout << "log,Tracking::Track,end process frame " << mCurrentFrame.mnId << endl;
+            localMapSize->push_back(std::make_pair(mCurrentFrame.mTimeStamp,mpMap->KeyFramesInMap() ));
             cout<<"Number of frames in MAP:"<<mpMap->KeyFramesInMap()<<endl;
         }
     }

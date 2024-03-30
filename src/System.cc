@@ -89,8 +89,9 @@ System::System(const string &strVocFile, const string &strSettingsFile, std::str
         
         //(it will live in the main thread of execution, the one that called this constructor)
         cout<<"System calls";
+        localMapSize=new vector<pair<double,int>>;
         mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer,
-                                mpMap, mpKeyFrameDatabase, strSettingsFile, mSensor);
+                                mpMap, mpKeyFrameDatabase, strSettingsFile, mSensor, localMapSize);
     } else if (RunType.compare("server") == 0){
         // Edge-SLAM: added settings file
         //Initialize the Local Mapping thread and launch
@@ -362,6 +363,19 @@ void System::Reset()
 void System::ClientShutdown()
 {
     // Edge-SLAM: call Destructor of tracking to kill all TCP threads
+    cout<<"client shutdown\n";
+
+
+
+    cout<<"savind local map data\n";
+
+    ofstream f;
+    f.open("localMapData.txt");
+    for(int i=0;i<localMapSize->size();i++){
+        f<<(*localMapSize)[i].first<<" "<<(*localMapSize)[i].second<<endl;
+    }
+
+    f.close();
     mpTracker->~Tracking();
 
     if(mpViewer)

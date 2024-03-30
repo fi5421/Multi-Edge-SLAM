@@ -32,8 +32,8 @@ std::chrono::high_resolution_clock::time_point LocalMapping::msLastMUStart = std
 std::chrono::high_resolution_clock::time_point LocalMapping::msLastMUStop;
 
 // Edge-SLAM: map update variables
-const int LocalMapping::MAP_FREQ=15000;
-const int LocalMapping::KF_NUM=12;
+const int LocalMapping::MAP_FREQ=5000;
+const int LocalMapping::KF_NUM=6;
 const int LocalMapping::CONN_KF=2;
 bool LocalMapping::msNewKFFlag=false;
 stack<long unsigned int> LocalMapping::msLatestKFsId;

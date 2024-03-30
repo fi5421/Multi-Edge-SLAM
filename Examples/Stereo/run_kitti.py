@@ -362,6 +362,7 @@ while run_count<runs:
         file=open('KeyFrameTrajectory_TUM_Format2.txt','r')
         lines2=file.readlines()
         num2=len(lines2)
+        num2=0
         file.close()
 
         file=open('KeyFrameTrajectory_TUM_Format_combined.txt','w')
@@ -413,8 +414,8 @@ while run_count<runs:
 
         shutil.copy('KeyFrameTrajectory_TUM_Format1.txt',f"{traj_path}/KeyFrameTrajectory_TUM_Format1.txt")
         # shutil.copy('KeyFrameTrajectory_TUM_Format2.txt',f"{traj_path}/KeyFrameTrajectory_TUM_Format2.txt")
-        shutil.copy('KeyFrameTrajectory_TUM_Format_combined.txt',f"{traj_path}/KeyFrameTrajectory_TUM_Format_combined.txt")
-        # shutil.copy('localMapData.txt',f"{traj_path}/localMapData.txt")
+        # shutil.copy('KeyFrameTrajectory_TUM_Format_combined.txt',f"{traj_path}/KeyFrameTrajectory_TUM_Format_combined.txt")
+        shutil.copy('localMapData.txt',f"{traj_path}/localMapData.txt")
         run_count+=1
 
         # logging.debug(evo_res+[num])
